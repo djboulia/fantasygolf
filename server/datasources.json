@@ -1,0 +1,14 @@
+{
+  "db": {
+    "name": "db",
+    "connector": "memory"
+  },
+  "fantasygolf": {
+    "database": "fantasygolf",
+    "username": "c6cf9b46-6ad6-47fe-a316-03e7a0564a61-bluemix",
+    "password": "77c19c471be43b6576e1dbfdd18aa59fd2c66f0691d9fcf88c338707885eae14",
+    "name": "fantasygolf",
+    "modelIndex": "className",
+    "connector": "cloudant"
+  }
+}

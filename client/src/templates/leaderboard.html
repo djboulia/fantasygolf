@@ -1,0 +1,122 @@
+<div ng-controller="LeaderboardCtrl">
+  <div class="row" ng-show="errorMessage">
+
+    <div class="col-lg-6">
+      <rd-widget>
+        <rd-widget-body classes="small no-padding">
+          <h4 style="text-align:center">{{errorMessage}}</h4>
+        </rd-widget-body>
+        <rd-widget>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div>
+      <rd-loading ng-hide="loaded || errorMessage"></rd-loading>
+      <rd-widget ng-show="loaded">
+        <rd-widget-header icon="fa-trophy" title="Leaderboard for {{name}}">
+        </rd-widget-header>
+        <rd-widget-body classes="no-padding">
+          <div ng-show="loaded">
+            <h4 align="center" style="color:blue;" ng-bind-html="statusMessage"></h4>
+
+            <div style="float:right; font-size:80%; font-style:italic; padding-right:10px;" ng-bind-html="lastUpdate"></div>
+
+            <h4><div style="padding-left:10px;" id="eventname">{{name}}</div></h4>
+
+
+            <div class="leaderboard">
+              <h3 align="center">Game Leaderboard</h3>
+              <div style="padding:15px;" align="center">
+                <table cellpadding="4" cellspacing="0">
+                  <thead>
+                    <tr>
+                      <td>
+                        <div class="leaderboard-header"><b>Name</b>
+                        </div>
+                      </td>
+                      <td align="right" style="border:none;">
+                        <div class="leaderboard-header"><b>Total</b>
+                        </div>
+                      </td>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboard">
+                    <tr ng-repeat="gamer in gamers">
+
+                      <td class="leaderboard">{{gamer.name}}</td>
+                      <td class="leaderboard" style="width:25%" ng-class="{leadercell: gamer.leader}" align="right">{{gamer.total}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div align="center">
+                <table>
+                  <tbody>
+                    <tr>
+                      <td align="right" class="leadercell" style="padding-left=5px;padding-right:5px;">*</td>
+                      <td style="padding-left:5px;">Season Leader</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+            <br/>
+
+            <h4><div style="padding-left:10px;">Details</div></h4>
+            <div ng-repeat="event in events">
+              <h4><div style="padding-left:20px;">{{event.name}}
+              </div></h4>
+              <div class="scores" id="tablesection" align="center">
+                <span ng-repeat="gamer in event.gamers">
+                  <span class="playerlist">
+
+                    <table border="1" cellpadding="4" cellspacing="0" width="40%">
+
+                      <thead>
+                        <tr>
+                          <td class="playerlist-header-th" colspan="2" align="center">
+
+                            <div id="playername"><b>{{gamer.name}}</b>
+                            </div>
+
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="playerlist-subheader-th"></td>
+                          <td class="playerlist-subheader-th"></td>
+                        </tr>
+                      </thead>
+
+                      <tbody id="tablebody">
+
+
+                        <tr ng-repeat="pick in gamer.picks track by $index">
+                          <td class="playerlist-subheader-th">{{pick.name}}</td>
+
+                          <td class="playerlist-subheader-th" align="right">{{pick.total}}</td>
+                        </tr>
+
+                        <tr class="playerlist-total">
+                             <td class="playerlist-total-td" align="center">Total</td>
+
+                             <td class="playerlist-total-td" align="right">{{gamer.total}}</td>
+                         </tr>
+
+                      </tbody>
+                    </table>
+                  </span>
+                </span>
+              </div>
+
+            </div>
+            </di </rd-widget-body>
+            <rd-widget>
+          </div>
+    </div>
+
+  </div>
