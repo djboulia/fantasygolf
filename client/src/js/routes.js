@@ -49,12 +49,6 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'About',
                 crumbs: 'Home / About'
             })
-            .state('aboutwatson', {
-                url: '/aboutwatson',
-                templateUrl: 'templates/aboutwatson.html',
-                label: 'How Watson is Used in GolfPicks',
-                crumbs: 'Home / Watson'
-            })
             .state('support', {
                 url: '/support',
                 templateUrl: 'templates/support.html',
@@ -73,8 +67,26 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'Tournament Leaders',
                 crumbs: 'Home / Golf Tournaments / Tournament Leaders'
             })
-            .state('picks/id', {
-                url: '/picks/id/:id',
+            .state('roster/id', {
+                url: '/roster/id/:id',
+                templateUrl: 'templates/roster.html',
+                label: 'Roster',
+                crumbs: 'Home / Games / Roster'
+            })
+            .state('rosteredit/id', {
+                url: '/rosteredit/id/player/:id',
+                templateUrl: 'templates/rosteredit.html',
+                label: 'Roster Edit',
+                crumbs: 'Home / Games / Roster Edit'
+            })
+            .state('rosteredit/id/player', {
+                url: '/rosteredit/id/player/:id/:playerid',
+                templateUrl: 'templates/rosteredit.html',
+                label: 'Roster Edit',
+                crumbs: 'Home / Games / Roster Edit'
+            })
+            .state('picks/id/event', {
+                url: '/picks/id/event/:id/:eventid',
                 templateUrl: 'templates/picks.html',
                 label: 'Picks',
                 crumbs: 'Home / Games / Picks'

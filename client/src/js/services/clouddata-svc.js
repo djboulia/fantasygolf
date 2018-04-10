@@ -383,7 +383,23 @@ angular.module('GolfPicks.cloud', [])
 
     var fantasyPick = function(pick) {
       this.name = pick.name;
-      this.total = pick.score_details.total;
+      this.id = pick.id;
+
+      if (pick.score_details) {
+        this.total = pick.score_details.total;
+      }
+    };
+
+    var fantasyPicks = function(picks) {
+      var picksArray = [];
+
+      for (var i = 0; i < picks.length; i++) {
+        var pick = picks[i];
+
+        picksArray.push(new fantasyPick(pick));
+      }
+
+      this.picks = picksArray;
     };
 
     var fantasyGamer = function(gamer) {
@@ -425,12 +441,21 @@ angular.module('GolfPicks.cloud', [])
       this.leader = gamer.leader;
     };
 
+    var fantasyRoster = function(roster) {
+
+      this.id = roster.id;
+      this.game = roster.data.game;
+      this.gamers = roster.data.gamers;
+      this.players = roster.data.roster;
+    };
+
     var fantasySeason = function(game) {
 
       this.id = game.id;
       this.name = game.data.name;
       this.tour = game.data.tour;
       this.season = game.data.season;
+      this.nextEvent = game.data.nextEvent;
 
       var gamedata = game.data;
       var gamerArray = [];
@@ -457,23 +482,54 @@ angular.module('GolfPicks.cloud', [])
     var newFantasySeasons = function(obj) {
 
       return {
-        getCurrentSeason: function() {
+        getCurrentSeasons: function() {
           console.log("length = " + obj.games.length + " " + JSON.stringify(obj.games));
 
-          if (obj.games && obj.games.length) {
-            // default to first one as current season for now
-            return new fantasySeason(obj.games[0]);
-          } else {
-            return null;
+          var seasons = [];
+
+          if (obj.games && obj.games.length > 0) {
+
+            // look for any seasons with a "nextEvent", indicating that
+            // events for this season are still under way, making this
+            // a current season
+            for (var i = 0; i < obj.games.length; i++) {
+              var game = obj.games[i];
+
+              var season = new fantasySeason(game);
+              if (season.nextEvent) {
+                seasons.push(season);
+              }
+            }
           }
+
+          return seasons;
         },
         getPriorSeasons: function() {
           var seasons = [];
 
-          if (obj.games && obj.games.length > 1) {
+          if (obj.games && obj.games.length > 0) {
 
-            // default to others as prior seasons for now
-            for (var i = 1; i < obj.games.length; i++) {
+            // look for any seasons without a "nextEvent", indicating that
+            // all events for the season have already completed, making this
+            // a prior season
+            for (var i = 0; i < obj.games.length; i++) {
+              var game = obj.games[i];
+
+              var season = new fantasySeason(game);
+              if (!season.nextEvent) {
+                seasons.push(season);
+              }
+            }
+          }
+
+          return seasons;
+        },
+        getSeasons: function() {
+          var seasons = [];
+
+          if (obj.games && obj.games.length > 0) {
+
+            for (var i = 0; i < obj.games.length; i++) {
               var game = obj.games[i];
 
               seasons.push(new fantasySeason(game));
@@ -487,11 +543,30 @@ angular.module('GolfPicks.cloud', [])
 
     // entry points for acessing fantasy data
     return {
+      getAllGames: function() {
+        var deferred = $q.defer();
+
+        Fantasy.search({
+            details: false // summary info only
+          },
+          function(obj) {
+            deferred.resolve(newFantasySeasons(obj));
+          },
+          function(err) {
+            deferred.reject({
+              "user": user.getId(),
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
       getGames: function(user) {
         var deferred = $q.defer();
 
         Fantasy.search({
-            gamer: user.getId()
+            gamer: user.getId(),
+            details: true
           },
           function(obj) {
             deferred.resolve(newFantasySeasons(obj));
@@ -514,6 +589,123 @@ angular.module('GolfPicks.cloud', [])
           function(obj) {
             console.log(JSON.stringify(obj));
             deferred.resolve(new fantasySeason(obj.game));
+          },
+          function(err) {
+            deferred.reject({
+              "gameid": gameid,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getRoster: function(gameid) {
+        var deferred = $q.defer();
+
+        console.log("About to get roster");
+
+        Fantasy.getRoster({
+            id: gameid
+          },
+          function(obj) {
+            console.log("Got roster");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasyRoster(obj.roster));
+          },
+          function(err) {
+            deferred.reject({
+              "gameid": gameid,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      updateRoster: function(gameid, records) {
+        var deferred = $q.defer();
+
+        console.log("About to get roster");
+
+        Fantasy.updatePlayers({
+            id: gameid,
+            players: records
+          },
+          function(obj) {
+            console.log("updated roster");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(obj);
+          },
+          function(err) {
+            deferred.reject({
+              "gameid": gameid,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getRosterGamer: function(gameid, user) {
+        var deferred = $q.defer();
+
+        console.log("About to get roster for this gamer");
+
+        Fantasy.getRosterGamer({
+            id: gameid,
+            gamerid: user.getId()
+          },
+          function(obj) {
+            console.log("Got roster");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasyRoster(obj.roster));
+          },
+          function(err) {
+            deferred.reject({
+              "gameid": gameid,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getPicks: function(gameid, eventid, user) {
+        var deferred = $q.defer();
+
+        console.log("About to get picks for game " + gameid + " and event " + eventid);
+
+        Fantasy.getPicks({
+            id: gameid,
+            eventid: eventid,
+            gamerid: user.getId()
+          },
+          function(obj) {
+            console.log("Got picks");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasyPicks(obj.picks));
+          },
+          function(err) {
+            deferred.reject({
+              "gameid": gameid,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      putPicks: function(gameid, eventid, user, picks) {
+        var deferred = $q.defer();
+
+        console.log("About to put picks for game " + gameid + " and event " + eventid);
+
+        Fantasy.putPicks({
+            id: gameid,
+            eventid: eventid,
+            gamerid: user.getId(),
+            picks: picks
+          }, {},
+          function(obj) {
+            console.log("Got picks");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasyPicks(obj.picks));
           },
           function(err) {
             deferred.reject({

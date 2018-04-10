@@ -1,32 +1,19 @@
 angular.module('CloudApp')
     .controller('PicksCtrl', ['$scope', '$stateParams', '$cookieStore',
-                              '$location', '$sanitize', 'cloudDataGame',
-                              'gameData', 'cloudDataCurrentUser',
-                              'gameUtils', PicksCtrl]);
+                              '$location', '$sanitize', 'cloudDataCurrentUser',
+                              'cdFantasy', PicksCtrl]);
 
 
 function PicksCtrl($scope, $stateParams, $cookieStore,
-    $location, $sanitize, cloudDataGame, gameData, currentUser, gameUtils) {
+    $location, $sanitize, currentUser, fantasy) {
 
-    var NUM_SELECTIONS = 3;
-    var NUM_TOP_ALLOWED = 1;
-    var NUM_TOP_RANK = 2;
+    var NUM_SELECTIONS = 5;
     var changed = false;
     var gameid = $stateParams.id;
+    var eventid = $stateParams.eventid;
     var players = [];
-    var logger = gameUtils.logger;
-    var currentGame = undefined;
 
-    // TODO: fix this for non PGA
-    var isPGA = true;
-
-    if (isPGA) {
-        NUM_SELECTIONS = 10;
-        NUM_TOP_ALLOWED = 2;
-        NUM_TOP_RANK = 10;
-    }
-
-    console.log("reached picks controller with event id " + gameid);
+    console.log("reached picks controller with game id " + gameid + " and event id " + eventid);
 
     var testingMode = $location.search().testingMode ? true : false;
     console.log("testingMode is set to " + testingMode);
@@ -50,13 +37,6 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
         players[ndx].selected = false;
     };
 
-    var formatRank = function (rank) {
-        var val = parseInt(rank);
-        if (isNaN(val)) val = "-";
-
-        return (val <= 10) ? "<b>" + val + "</b>" : val;
-    }
-
     var getSelections = function (players) {
         var selections = [];
 
@@ -74,7 +54,6 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
 
         selections.forEach(function (selection) {
             numSelections++;
-            if (selection.index <= NUM_TOP_RANK) numTopPicks++;
         });
 
         // now disable based on this
@@ -85,8 +64,6 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
             } else {
                 // disable the rest based on current picks
                 if (numSelections >= NUM_SELECTIONS) {
-                    player.selectable = false;
-                } else if (numTopPicks >= NUM_TOP_ALLOWED && player.index <= NUM_TOP_RANK) {
                     player.selectable = false;
                 } else {
                     player.selectable = true;
@@ -135,65 +112,43 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
     // get the event information
     if (gameid) {
 
-        cloudDataGame.get(gameid)
-            .then(function (game) {
+        fantasy.getPicks(gameid, eventid, currentUser)
+            .then(function (picks) {
 
-                    currentGame = game;
+                    // if (!testingMode) {
+                    //     var gameDetails = gameUtils.getGameDetails(game);
+                    //
+                    //     // give players a 10 hr grace period
+                    //     // (10AM on day of tournament) to complete picks
+                    //     gameDetails = gameUtils.addGracePeriod(gameDetails, 10);
+                    //
+                    //     if (gameUtils.tournamentInProgress(gameDetails.start,
+                    //             gameDetails.end)) {
+                    //         $scope.errorMessage = "Tournament is in progress, picks can no longer be made.";
+                    //
+                    //         return;
+                    //     } else if (gameUtils.tournamentComplete(gameDetails.start,
+                    //             gameDetails.end)) {
+                    //         $scope.errorMessage = "This tournament has already ended, picks can no longer be made.";
+                    //
+                    //         return;
+                    //     }
+                    // }
 
-                    if (!testingMode) {
-                        var gameDetails = gameUtils.getGameDetails(game);
+                    fantasy.getRosterGamer(gameid, currentUser)
+                        .then(function (roster) {
+                                // var event = result.event;
+                                var golfers = roster.players;
 
-                        // give players a 10 hr grace period
-                        // (10AM on day of tournament) to complete picks
-                        gameDetails = gameUtils.addGracePeriod(gameDetails, 10);
+                                loadSavedPicks(golfers, picks.picks);
+                                debug("Picks : " + JSON.stringify(picks));
 
-                        if (gameUtils.tournamentInProgress(gameDetails.start,
-                                gameDetails.end)) {
-                            $scope.errorMessage = "Tournament is in progress, picks can no longer be made.";
-
-                            return;
-                        } else if (gameUtils.tournamentComplete(gameDetails.start,
-                                gameDetails.end)) {
-                            $scope.errorMessage = "This tournament has already ended, picks can no longer be made.";
-
-                            return;
-                        }
-                    }
-
-                    gameData.loadRankedPlayers(game.eventid)
-                        .then(function (result) {
-                                var event = result.event;
-                                var golfers = result.golfers;
-
-                                if (!game.gamers) {
-                                    game.gamers = [{
-                                        "user": currentUser.getId(),
-                                        "picks": []
-                                    }];
-                                } else {
-                                    // might have previously stored picks
-                                    var picks = [];
-                                    var gamers = game.gamers;
-
-                                    for (var i = 0; i < gamers.length; i++) {
-                                        var gamer = gamers[i];
-                                        if (gamer.user == currentUser.getId()) {
-                                            picks = gamer.picks;
-                                        }
-                                    }
-
-                                    loadSavedPicks(golfers, picks);
-                                    debug("Picks : " + JSON.stringify(picks));
-                                }
-
-                                $scope.name = event.name;
-                                $scope.start = event.start;
-                                $scope.end = event.end;
-                                $scope.rounds = event.rounds;
+                                $scope.name = roster.game.name;
+                                // $scope.start = event.start;
+                                // $scope.end = event.end;
+                                // $scope.rounds = event.rounds;
                                 $scope.players = golfers;
                                 $scope.NUM_SELECTIONS = NUM_SELECTIONS;
-                                $scope.NUM_TOP_RANK = NUM_TOP_RANK;
-                                $scope.NUM_TOP_ALLOWED = NUM_TOP_ALLOWED;
                                 $scope.loaded = true;
 
                             },
@@ -204,7 +159,7 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
                             });
                 },
                 function (err) {
-                    logger.error("Couldn't access game information!");
+                    console.log("Couldn't access game information!");
 
                     $scope.errorMessage = "Couldn't access game information!";
                 });
@@ -250,8 +205,8 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
 
         console.log("saving picks: " + JSON.stringify(picks));
 
-        cloudDataGame.savePicks(currentGame, currentUser, picks)
-            .then(function (game) {
+        fantasy.putPicks(gameid, eventid, currentUser, picks)
+            .then(function (picks) {
                     $scope.picksMessage = "Picks saved.";
                     changed = false;
                 },

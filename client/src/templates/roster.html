@@ -1,4 +1,4 @@
-<div ng-controller="PicksCtrl">
+<div ng-controller="RosterCtrl">
 
     <div class="row">
 
@@ -23,39 +23,40 @@
 
             <rd-loading ng-hide="loaded"></rd-loading>
             <rd-widget ng-show="loaded">
-                <rd-widget-header icon="fa-trophy" title="Picks for {{username}}">
+                <rd-widget-header icon="fa-user" title="Roster Update for {{name}}">
+                  <a href="{{editUrl}}">Add Player</a>
                 </rd-widget-header>
                 <rd-widget-body classes="no-padding">
 
                     <div class="instructions">
                         <h3><div>{{name}}</div></h3>
-                        <div>Select {{NUM_SELECTIONS}} players from the list.</div>
-                        <div>Press 'Save Picks' at the bottom when finished.</div>
+                        <div>Press 'Save' at the bottom when finished.</div>
                     </div>
 
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th></th>
                                     <th>Player</th>
+                                    <th>Owner</th>
                                 </tr>
                             </thead>
                             <tbody>
 
                                 <tr ng-repeat="player in players">
-                                    <td class="text-center">
-                                        <input type="checkbox" ng-disabled="!player.selectable" ng-model="player.selected" ng-click="updatePlayer(player);">
-                                        </input>
+                                    <td>
+                                        <div>{{player.name}}</div>
                                     </td>
                                     <td>
-                                        <div ng-class="{'toppick': player.index<=NUM_TOP_RANK, 'disabled':!player.selectable}">{{player.name}}</div>
+                                      <select ng-click="updatePlayer(player);" ng-model="player.selectedGamer" ng-options="x.name for x in gamers">
+
+                                      </select>
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td class="text-center" colspan="3">
-                                        <button class="button button-positive" ng-disabled="!canSubmit" ng-click="submit()">Save Picks</button>
+                                        <button class="button button-positive" ng-disabled="!canSubmit" ng-click="submit()">Save</button>
                                     </td>
                                 </tr>
                                 <tr>

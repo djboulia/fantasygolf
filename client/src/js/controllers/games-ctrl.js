@@ -13,18 +13,34 @@ function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fant
 
     fantasy.getGames(currentUser)
         .then(function (seasons) {
-                var active = seasons.getCurrentSeason();
+                var activeSeasons = seasons.getCurrentSeasons();
                 var statusMessage = "";
 
-                if (!active) {
+                if (activeSeasons.length==0) {
                     statusMessage = 'No current season.';
+                    console.log(statusMessage);
                 } else {
-                  $scope.statusMessage = statusMessage;
-                  $scope.leaderboardUrl = leaderboardUrl;
-                  $scope.active = active
-                  $scope.id = active.id
+
+                  // if testing mode is true, disable the normal checking for
+                  // setting picks
+
+                  if (testingMode) {
+                    for (var i=0; i<activeSeasons.length; i++) {
+                      var season = activeSeasons[i];
+                      if (season.nextEvent) {
+                        season.nextEvent.canSetPicks = true;
+                        season.nextEvent.inProgress = false;
+                        season.nextEvent.opens = undefined;
+                      }
+                    }
+                  }
+
+                  $scope.activeSeasons = activeSeasons;
                 }
 
+                $scope.statusMessage = statusMessage;
+                $scope.leaderboardUrl = leaderboardUrl;
+                $scope.picksUrl = picksUrl;
                 $scope.gameHistory = seasons.getPriorSeasons();
                 $scope.loaded = true;
 

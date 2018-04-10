@@ -1,10 +1,9 @@
 angular.module('CloudApp')
-    .controller('AllGamesCtrl', ['$scope', '$cookieStore', '$location', '$sanitize', 'cloudDataCurrentUser', 'gameData', AllGamesCtrl]);
+    .controller('AllGamesCtrl', ['$scope', '$cookieStore', '$location', '$sanitize', 'cloudDataCurrentUser', 'cdFantasy', AllGamesCtrl]);
 
-function AllGamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, gameData) {
+function AllGamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fantasy) {
 
-    var gamePlayersUrl = "#/gameplayers";
-    var picksUrl = "#/picks";
+    var rosterUrl = "#/roster";
     var editUrl = '#/game';
 
     console.log("reached allgames controller!");
@@ -12,15 +11,17 @@ function AllGamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, g
     var testingMode = $location.search().testingMode ? true : false;
     console.log("testingMode is set to " + testingMode);
 
-    gameData.loadGames()
-        .then(function (games) {
+    fantasy.getAllGames()
+        .then(function (seasons) {
+
+                var games = seasons.getSeasons();
 
                 var statusMessage = "";
 
                 console.log("games : " + JSON.stringify(games));
 
                 $scope.statusMessage = statusMessage;
-                $scope.gamePlayersUrl = gamePlayersUrl;
+                $scope.rosterUrl = rosterUrl;
                 $scope.editUrl = editUrl;
                 $scope.games = games;
                 $scope.loaded = true;

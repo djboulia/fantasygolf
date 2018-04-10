@@ -34,19 +34,7 @@
   },
   "Game": {
     "dataSource": "fantasygolf",
-    "public": true,
-    "$promise": {},
-    "$resolved": true
-  },
-  "Event": {
-    "dataSource": "fantasygolf",
-    "public": true,
-    "$promise": {},
-    "$resolved": true
-  },
-  "Course": {
-    "dataSource": "fantasygolf",
-    "public": true,
+    "public": false,
     "$promise": {},
     "$resolved": true
   },
@@ -65,5 +53,9 @@
   "Fantasy": {
     "dataSource": null,
     "public": true
+  },
+  "Roster": {
+    "dataSource": "fantasygolf",
+    "public": false
   }
 }

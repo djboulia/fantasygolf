@@ -21,9 +21,9 @@
                             <tbody>
                                 <tr ng-repeat="game in games">
                                     <td>{{game.name}}</td>
-                                    <td><a ng-href="{{gamePlayersUrl}}/id/{{game._id}}">View Players</a>
+                                    <td><a ng-href="{{rosterUrl}}/id/{{game.id}}">View Roster</a>
                                     </td>
-                                    <td><a href="{{editUrl}}/id/{{game._id}}">Edit</a>
+                                    <td><a href="{{editUrl}}/id/{{game.id}}">Edit</a>
                                     </td>
                                 </tr>
                             </tbody>

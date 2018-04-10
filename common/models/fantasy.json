@@ -1,7 +1,7 @@
 {
   "name": "Fantasy",
-  "base": "Model",
   "plural": "Fantasy",
+  "base": "Model",
   "idInjection": true,
   "options": {
     "validateUpsert": true

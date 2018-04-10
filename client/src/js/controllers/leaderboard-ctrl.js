@@ -1,11 +1,9 @@
 angular.module('CloudApp')
-  .controller('LeaderboardCtrl', ['$scope', '$stateParams', '$location', 'cdFantasy',
-    'gameData', 'gameUtils', 'eventUtils',
-    'weatherData', LeaderboardCtrl
+  .controller('LeaderboardCtrl', ['$scope', '$stateParams', '$location', 'cdFantasy', LeaderboardCtrl
   ]);
 
 
-function LeaderboardCtrl($scope, $stateParams, $location, fantasy, gameData, gameUtils, eventUtils, weatherData) {
+function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
   var gameid = $stateParams.id;
 
   $scope.courseUrl = "coursedetails";

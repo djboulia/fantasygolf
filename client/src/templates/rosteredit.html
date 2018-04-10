@@ -1,0 +1,38 @@
+<div ng-controller="RosterEditCtrl">
+
+    <div class="row">
+
+        <rd-loading ng-hide="loaded"></rd-loading>
+
+        <div ng-show="loaded" class="col-lg-6">
+            <rd-widget>
+                <rd-widget-header icon="fa-user" title="{{title}}">
+                    <a ng-show="existingPlayer" href="" ng-click="delete()">Delete</a>
+                </rd-widget-header>
+                <rd-widget-body classes="medium no-padding">
+                    <div class="table-responsive">
+                        <form>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tr>
+                                        <td><span>Name:</span>
+                                        </td>
+                                        <td>
+                                            <input size="40" ng-model="name"></input>
+                                        </td>
+                                    </tr>
+                                    <tr class="text-center">
+                                        <td colspan="2">
+                                            <button ng-click="submit()">Save</button>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                        </form>
+                    </div>
+                </rd-widget-body>
+                <rd-widget>
+        </div>
+    </div>
+</div>
