@@ -491,6 +491,11 @@ module.exports = function(Fantasy) {
     return found;
   };
 
+  //
+  // we get the scoring data for this event from our back end
+  // service.  then we fluff up the picks for this gamer with the
+  // scoring information.
+  //
   var processScore = function(tourSeason, roster, event) {
     return new Promise(function(resolve, reject) {
       tourSeason.getEvent(event.id, (json) => {
@@ -550,7 +555,10 @@ module.exports = function(Fantasy) {
 
 
 
-
+//
+// go through each tour event in this game and fluff up the
+// gamer names so we send back a human readable name for each gamer
+//
   var addGamerData = function(record) {
     return new Promise(function(resolve, reject) {
       var game = record.data;
@@ -573,8 +581,27 @@ module.exports = function(Fantasy) {
 
   };
 
+var findGamerForEvent = function(event, gamerid) {
+  var gamers = event.gamers;
 
+  if (gamers) {
 
+      // now look for our gamerid in the list
+      for (var g = 0; g < gamers.length; g++) {
+        var gamer = gamers[g];
+
+        if (gamer.id == gamerid) {
+          return gamer;
+        }
+      }
+  }
+
+  return null;
+};
+
+//
+// get all of the games that this gamer is participating in
+//
   var findGames = function(records, gamerid) {
     var games = [];
 
@@ -589,32 +616,15 @@ module.exports = function(Fantasy) {
         for (var e = 0; e < events.length; e++) {
           var event = events[e];
 
-          var gamers = event.gamers;
-          var found = false;
+          var gamer = findGamerForEvent(event, gamerid);
 
-          if (gamers) {
-
-
-            // now look for our gamerid in the list
-            for (var g = 0; g < gamers.length; g++) {
-              var gamer = gamers[g];
-
-              if (gamer.id == gamerid) {
-                // found a match, add this record to our list and continue
-                logger.log("Found game!: " + JSON.stringify(record));
-                games.push(record);
-                found = true;
-                break;
-              }
-            }
-          }
-
-          if (found) {
-            // already got this game, move on
+          if (gamer) {
+            // found a match, add this record to our list and continue
+            logger.log("Found game!: " + JSON.stringify(record));
+            games.push(record);
             break;
           }
         }
-
       }
     }
 
@@ -703,6 +713,41 @@ module.exports = function(Fantasy) {
     return seasonTotals;
   };
 
+  var picksTotal = function( gamer ) {
+    var gamerTotal = 0;
+
+    for (var p = 0; p < gamer.picks.length; p++) {
+      var pick = gamer.picks[p];
+
+      if (pick.score_details && !isNaN(pick.score_details.total)) {
+        gamerTotal += pick.score_details.total;
+      } else {
+        console.error("ERROR: could not get total for picks.score_details" + JSON.stringify(pick.score_details));
+      }
+      console.log("gamerTotal = " + gamerTotal);
+    }
+
+    return gamerTotal;
+  };
+
+  var addToSeasonTotals = function(gamer, seasonTotals, gamerTotal) {
+    var gamerid = gamer.id;
+
+    if (!seasonTotals[gamerid]) {
+      // first event for this gamer, intialize the data structure
+      seasonTotals[gamerid] = {
+        "total": gamerTotal,
+        "name": gamer.name
+      };
+
+      console.log("set seasonTotals " + JSON.stringify(seasonTotals));
+    } else {
+      console.log("adding to totals " + gamerid + "gamerTotal=" + gamerTotal);
+      seasonTotals[gamerid]["total"] += gamerTotal;
+    }
+
+  };
+
   var tallyTotalScores = function(record) {
     // tally individual event scores and season totals
     var seasonTotals = {};
@@ -716,30 +761,11 @@ module.exports = function(Fantasy) {
         var gamer = gamers[g];
         var gamerTotal = 0;
 
-        for (var p = 0; p < gamer.picks.length; p++) {
-          var pick = gamer.picks[p];
-          if (pick.score_details && !isNaN(pick.score_details.total)) {
-            gamerTotal += pick.score_details.total;
-          } else {
-            console.error("ERROR: could not get total for picks.score_details" + JSON.stringify(pick.score_details));
-          }
-          console.log("gamerTotal = " + gamerTotal);
-        }
+        gamerTotal += picksTotal(gamer);
 
         gamer.total = gamerTotal;
 
-        if (!seasonTotals[gamer.id]) {
-          // first event for this gamer, intialize the data structure
-          seasonTotals[gamer.id] = {
-            "total": gamerTotal,
-            "name": gamer.name
-          };
-
-          console.log("set seasonTotals " + JSON.stringify(seasonTotals));
-        } else {
-          console.log("adding to totals " + gamer.id + "gamerTotal=" + gamerTotal);
-          seasonTotals[gamer.id]["total"] += gamerTotal;
-        }
+        addToSeasonTotals(gamer, seasonTotals, gamerTotal);
 
       }
 
