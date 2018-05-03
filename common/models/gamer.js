@@ -5,6 +5,8 @@ var gamerCache = new Cache(60 * 10); // 10 mins
 
 module.exports = function(Gamer) {
 
+  var app = require('../../server/server');
+
   /**
    * create promise-friendly versions of key functions we use internally
    * in the other modules
@@ -205,4 +207,193 @@ module.exports = function(Gamer) {
 
     });
   }
+
+  var getEventForGame = function(game, eventid) {
+    var events = game.data.events;
+    var foundEvent = null;
+
+    for (var e = 0; e < events.length; e++) {
+      var event = events[e];
+
+      if (event.id == eventid) {
+        foundEvent = event;
+        break;
+      }
+    }
+
+    return foundEvent;
+  };
+
+  var getGamerForEvent = function(event, gamerid) {
+    var gamers = event.gamers;
+    var foundGamer = null;
+
+    for (var g = 0; g < gamers.length; g++) {
+      var gamer = gamers[g];
+
+      if (gamer.id == gamerid) {
+        foundGamer = gamer;
+        break;
+      }
+    }
+
+    return foundGamer;
+  };
+
+  Gamer.Promise.getPicks = function(gameid, eventid, gamerid) {
+    return new Promise(function(resolve, reject) {
+
+      var Game = app.models.Game.Promise;
+
+      Game.findById(gameid).then(function(game) {
+
+        var picks = [];
+
+        var event = getEventForGame(game, eventid);
+
+        if (event) {
+          var gamer = getGamerForEvent(event, gamerid);
+
+          if (gamer) {
+            console.log("found picks for " + gamerid);
+            console.log("picks: " + JSON.stringify(gamer.picks));
+            picks = gamer.picks;
+          }
+        }
+
+        resolve(picks);
+
+      }, function(err) {
+        reject(err);
+      });
+    });
+  }
+
+
+  var newEventForGame = function(game, eventid) {
+    var newEvent = {};
+    newEvent.id = eventid;
+    newEvent.gamers = [];
+
+    var events = game.data.events;
+    events.push(newEvent);
+
+    return newEvent;
+  }
+
+  var getOrCreateEventForGame = function(game, eventid) {
+    var foundEvent = getEventForGame(game, eventid);
+
+    if (!foundEvent) {
+      // first picks for this event, add it
+      console.log("first picks for event " + eventid + ", adding them");
+
+      foundEvent = newEventForGame(game, eventid);
+    }
+
+    return foundEvent;
+  }
+
+  var newGamerForEvent = function(event, gamerid) {
+    var newGamer = {};
+    newGamer.id = gamerid;
+
+    event.gamers.push(newGamer);
+
+    return newGamer;
+  }
+
+  var getOrCreateGamerForEvent = function(event, gamerid) {
+    var foundGamer = getGamerForEvent(event, gamerid);
+
+    if (!foundGamer) {
+      console.log("first picks for gamer " + gamerid + ", adding them");
+
+      // first time these picks have been saved for this gamer, add them
+      foundGamer = newGamerForEvent(event, gamerid);
+    }
+
+    return foundGamer;
+  }
+
+  Gamer.Promise.putPicks = function(gameid, eventid, gamerid, picks) {
+    return new Promise(function(resolve, reject) {
+      var Game = app.models.Game.Promise;
+
+      Game.findById(gameid).then(function(game) {
+
+        var event = getOrCreateEventForGame(game, eventid);
+
+        var gamer = getOrCreateGamerForEvent(event, gamerid);
+
+        gamer.picks = picks;
+
+        console.log("replaced event record: " + JSON.stringify(event));
+        console.log("game: " + JSON.stringify(game));
+
+        // now put the game back
+        var Game = app.models.Game.Promise;
+
+        Game.replaceOrCreate(game).then(function(record) {
+          if (record) {
+
+            // logger.log("updated picks for game " + id)
+            // console.log("updated game: " + JSON.stringify(record));
+
+            resolve(picks);
+
+          } else {
+            var str = "Could not replace game!";
+            reject(str);
+          }
+        }, function(err) {
+          reject(err);
+        });
+
+      }, function(err) {
+        reject(err);
+      });
+    });
+  }
+
+
+  //
+  // return an array of player records representing this
+  // gamer's roster of players
+  //
+  var getRosterForGamer = function(roster, gamerid) {
+    var rosterGamer = [];
+
+    var rosterData = roster.data.roster;
+    for (var r = 0; r < rosterData.length; r++) {
+      var player = rosterData[r];
+
+      if (player.gamer == gamerid) {
+        rosterGamer.push(player);
+      }
+    }
+
+    return rosterGamer;
+  };
+
+  Gamer.Promise.getRoster = function(gameid, gamerid) {
+    var Roster = app.models.Roster.Promise;
+
+    // get the roster for this individual gamer
+    // first get the overall roster, then filter it to
+    // just the entries that are associated with this gamer
+    return new Promise(function(resolve, reject) {
+      Roster.findByGameId(gameid).then(function(roster) {
+        var rosterGamer = getRosterForGamer(roster, gamerid);
+
+        roster.data.roster = rosterGamer;
+
+        resolve(roster);
+      }, function(err) {
+        reject(err);
+      });
+
+    });
+  };
+
 };
