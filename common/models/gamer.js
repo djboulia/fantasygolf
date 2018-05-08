@@ -78,6 +78,26 @@ module.exports = function(Gamer) {
 
   };
 
+  Gamer.Promise.find = function() {
+    return new Promise(function(resolve, reject) {
+
+      Gamer.find(function(err, gamers) {
+
+        console.log("got to Gamer.find");
+
+        if (!err && gamers) {
+          resolve(gamers);
+        } else {
+          console.log(err);
+          reject(err);
+        }
+      });
+
+    });
+  }
+
+
+
   // keep track of in progress queries to the db
   // we queue them up rather than hitting the db
   // a bunch of times in a small window.  Cloudant

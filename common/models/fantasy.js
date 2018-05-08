@@ -1,6 +1,7 @@
 'use strict';
 
 var logger = require('../lib/logger.js');
+var TourSeason = require('../lib/tourseason.js');
 
 module.exports = function(Fantasy) {
 
@@ -42,6 +43,33 @@ module.exports = function(Fantasy) {
   );
 
   Fantasy.remoteMethod(
+    'getTourSchedule', {
+      http: {
+        path: '/tour/:tour/year/:year/schedule',
+        verb: 'get'
+      },
+      description: 'Get the tour schedule for the given year',
+
+      accepts: [{
+          arg: 'tour',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'year',
+          type: 'string',
+          required: true
+        }
+      ],
+      returns: {
+        arg: 'schedule',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
     'getGame', {
       http: {
         path: '/:id',
@@ -54,6 +82,102 @@ module.exports = function(Fantasy) {
         type: 'string',
         required: true
       }],
+      returns: {
+        arg: 'game',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
+    'updateGame', {
+      http: {
+        path: '/:id',
+        verb: 'put'
+      },
+      description: 'Update game data',
+
+      accepts: [{
+        arg: 'id',
+        type: 'string',
+        required: true
+      },
+      {
+        arg: 'name',
+        type: 'string',
+        required: true
+      },
+      {
+        arg: 'schedule',
+        type: 'array',
+        required: true
+      },
+      {
+        arg: 'gamers',
+        type: 'array',
+        required: true
+      }
+      ],
+      returns: {
+        arg: 'game',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
+    'getGamers', {
+      http: {
+        path: '/gamers',
+        verb: 'get'
+      },
+      description: 'Get all gamers',
+
+      accepts: [],
+      returns: {
+        arg: 'gamers',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
+    'newGame', {
+      http: {
+        path: '/',
+        verb: 'post'
+      },
+      description: 'Create a new game entry',
+
+      accepts: [{
+          arg: 'season',
+          type: 'number',
+          required: true
+        },
+        {
+          arg: 'tour',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'name',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'schedule',
+          type: 'array',
+          required: true
+        },
+        {
+          arg: 'gamers',
+          type: 'array',
+          required: true
+        }
+      ],
       returns: {
         arg: 'game',
         type: 'object',
@@ -255,6 +379,65 @@ module.exports = function(Fantasy) {
       });
   };
 
+  //
+  // just get the base of the url as the tournament id
+  //
+  var tournamentId = function(str) {
+    var ndx = str.lastIndexOf("/");
+    if (ndx>0) {
+      return str.substring(ndx+1);
+    } else {
+      return str;
+    }
+  }
+
+  /**
+   * /tour/:tour/year/:year/schedule
+   *
+   * saves the picks for this gamer
+   *
+   **/
+  Fantasy.getTourSchedule = function(tour, year, cb) {
+
+    console.log("getting tour schedule for tour " + tour + " and year " + year);
+
+    var tourSeason = new TourSeason(year, tour);
+
+    tourSeason.getSchedule( (json) => {
+
+      if (json) {
+
+        var records = [];
+
+        var schedule = json.schedule;
+        for (var i=0; i<schedule.length; i++) {
+          var tourEvent = schedule[i];
+
+          // build a list of valid tour events.  only include stroke play format
+          if (tourEvent.format == "stroke") {
+            var record = {};
+
+            record.startDate = tourEvent.startDate;
+            record.endDate = tourEvent.endDate;
+            record.name = tourEvent.tournament;
+            record.id = tournamentId(tourEvent.link.href);
+
+            records.push(record);
+          }
+        }
+
+        cb(null, {
+          schedule: records
+        });
+
+      } else {
+        var err = "json is null";
+        cb(err, null);
+      }
+
+    });
+
+  };
 
   /**
    * /:id
@@ -279,6 +462,79 @@ module.exports = function(Fantasy) {
         cb(err, null);
       });
 
+  };
+
+  /**
+   * /:id
+   *
+   * updates game information for this id
+   *
+   **/
+  Fantasy.updateGame = function(id, name, schedule, gamers, cb) {
+
+    console.log("updating game " + id);
+
+    var Game = app.models.Game.Promise;
+
+    Game.update(id, name, schedule, gamers)
+      .then(function(record) {
+
+        cb(null, {
+          game: record
+        });
+
+      }, function(err) {
+        cb(err, null);
+      });
+
+  };
+
+  /**
+   * /gamers
+   *
+   * returns the list of all gamers
+   *
+   **/
+  Fantasy.getGamers = function(cb) {
+
+    var Gamer = app.models.Gamer.Promise;
+
+    Gamer.find()
+      .then(function(records) {
+
+        cb(null, {
+          gamers: records
+        });
+
+      }, function(err) {
+        cb(err, null);
+      });
+
+  };
+
+
+  /**
+   * /:id/event/:eventid/gamer/:gamerid
+   *
+   * saves the picks for this gamer
+   *
+   **/
+  Fantasy.newGame = function(season, tour, name, schedule, gamers, cb) {
+
+    console.log("creating new game for season " + season + " and tour " + tour + " with name " + name);
+
+    var Game = app.models.Game.Promise;
+
+    Game.create(season, tour, name, schedule, gamers)
+      .then(function(record) {
+
+        cb(null, {
+          game: record
+        });
+
+      }, function(err) {
+        cb(err, null);
+      });
   };
 
   /**

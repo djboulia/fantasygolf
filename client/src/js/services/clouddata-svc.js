@@ -379,7 +379,7 @@ angular.module('GolfPicks.cloud', [])
       }
     };
   }])
-  .factory('cdFantasy', ['$q', 'Fantasy', function($q, Fantasy) {
+  .factory('cdFantasy', ['$q', 'Fantasy', 'Gamer', function($q, Fantasy, gamer) {
 
     var fantasyPick = function(pick) {
       this.name = pick.name;
@@ -455,6 +455,7 @@ angular.module('GolfPicks.cloud', [])
       this.name = game.data.name;
       this.tour = game.data.tour;
       this.season = game.data.season;
+      this.schedule = game.data.schedule;
       this.nextEvent = game.data.nextEvent;
 
       var gamedata = game.data;
@@ -540,6 +541,51 @@ angular.module('GolfPicks.cloud', [])
         }
       };
     };
+
+    var fantasySchedule = function(obj) {
+
+      return {
+        get: function() {
+
+          var events = [];
+
+          if (obj && obj.length > 0) {
+
+            for (var i = 0; i < obj.length; i++) {
+              var event = obj[i];
+
+              events.push(event);
+            }
+          }
+
+          return events;
+        }
+      };
+
+    };
+
+    var fantasyGamers = function(obj) {
+
+      return {
+        get: function() {
+
+          var gamers = [];
+
+          if (obj && obj.length > 0) {
+
+            for (var i = 0; i < obj.length; i++) {
+              var gamer = obj[i];
+
+              gamers.push({id: gamer.id, name: gamer.data.name});
+            }
+          }
+
+          return gamers;
+        }
+      };
+
+    };
+
 
     // entry points for acessing fantasy data
     return {
@@ -710,6 +756,98 @@ angular.module('GolfPicks.cloud', [])
           function(err) {
             deferred.reject({
               "gameid": gameid,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getSchedule: function(tour, year) {
+        var deferred = $q.defer();
+
+        console.log("About to get schedule for " + tour + " and season " + year);
+
+        Fantasy.getTourSchedule({
+            tour: tour,
+            year: year
+          },
+          function(obj) {
+            console.log("Got schedule");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasySchedule(obj.schedule));
+          },
+          function(err) {
+            deferred.reject({
+              "tour": tour,
+              "year": year,
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getAllGamers: function() {
+        var deferred = $q.defer();
+
+        console.log("About to get all gamers");
+
+        Fantasy.getGamers(
+          function(obj) {
+            console.log("Got gamers");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasyGamers(obj.gamers));
+          },
+          function(err) {
+            deferred.reject({
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      newGame: function(year, tour, name, schedule, gamers) {
+        var deferred = $q.defer();
+
+        console.log("About to create game " + name);
+
+        Fantasy.newGame({
+            season: year,
+            tour: tour,
+            name: name,
+            schedule: schedule,
+            gamers: gamers
+          }, {},
+          function(obj) {
+            console.log("Created game");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(obj);
+          },
+          function(err) {
+            deferred.reject({
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      updateGame: function(id, name, schedule, gamers) {
+        var deferred = $q.defer();
+
+        console.log("About to update game " + id);
+
+        Fantasy.updateGame({
+            id: id,
+            name: name,
+            schedule: schedule,
+            gamers: gamers
+          }, {},
+          function(obj) {
+            console.log("Updated game");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(obj);
+          },
+          function(err) {
+            deferred.reject({
               "err": err
             });
           });

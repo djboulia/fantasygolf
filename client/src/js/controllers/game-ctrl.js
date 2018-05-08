@@ -1,310 +1,269 @@
 angular.module('CloudApp')
-    .controller('GameCtrl', ['$scope', '$stateParams', '$uibModal', '$cookieStore', 'cloudDataGame', 'cloudDataEvent', 'cloudDataCourse', GameCtrl]);
+  .controller('GameCtrl', ['$scope', '$stateParams', '$uibModal', '$cookieStore', 'cdFantasy', GameCtrl]);
 
 
-function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, cloudDataGame, cloudDataEvent, cloudDataCourse) {
-    var returnUrl = "#/allgames";
+function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
+  var returnUrl = "#/allgames";
 
-    console.log("reached game controller with id " + $stateParams.id);
+  console.log("reached game controller with id " + $stateParams.id);
 
-    var majors = [
-        {
-            name: "The Masters",
-            provider: 'pga',
-            baseurl: "masters-tournament",
-            id: "014"
-        },
-        {
-            name: "The U.S. Open",
-            provider: 'pga',
-            baseurl: "us-open",
-            id: "026"
-        },
-        {
-            name: "The Open Championship",
-            provider: 'pga',
-            baseurl: "the-open-championship",
-            id: "100"
-        },
-        {
-            name: "The PGA Championship",
-            provider: 'golfchannel',
-            baseurl: "pga-championship",
-            id: "pga-of-america"
-        }
-    ];
+  var existingGame = undefined;
 
-    var existingGame = undefined;
-    var existingEvent = undefined;
+  $scope.popup = {
+    start: false,
+    end: false
+  };
 
-    var findTournament = function (event) {
-        var major = undefined;
+  $scope.openPopup = function(selected) {
+    $scope.popup[selected] = true;
+  };
 
-        console.log("looking for major " + event.baseurl);
+  $scope.dateOptions = {};
 
-        for (var i = 0; i < majors.length; i++) {
-            if (majors[i].baseurl == event.baseurl) {
-                major = majors[i];
-                break;
-            }
-        }
+  $scope.startChanged = function() {
+    console.log("start:", this.start);
+    this.end = this.start;
+    this.dateOptions.minDate = this.start;
+  };
 
-        return major;
-    };
+  $scope.dateFormat = "MMM dd ',' yyyy";
+  $scope.altInputFormats = ['M!/d!/yyyy'];
 
-    var findCourse = function (event, courses) {
-        var course = undefined;
+  var findEventById = function(id, schedule) {
+    for (var i = 0; i < schedule.length; i++) {
+      var event = schedule[i];
 
-        if (event.rounds.length > 0) {
-            var courseid = event.rounds[0].course._id;
-
-            console.log("looking for courseid " + JSON.stringify(courseid));
-
-            for (var i = 0; i < courses.length; i++) {
-                //                console.log("found course: " + JSON.stringify(courses[i]));
-
-                if (courses[i]._id == courseid) {
-                    course = courses[i];
-                    break;
-                }
-            }
-        }
-
-        return course;
-    };
-
-    $scope.popup = {
-        start: false,
-        end: false
-    };
-
-    $scope.openPopup = function (selected) {
-        $scope.popup[selected] = true;
-    };
-
-    $scope.dateOptions = {};
-
-    $scope.startChanged = function () {
-        console.log("start:", this.start);
-        this.end = this.start;
-        this.dateOptions.minDate = this.start;
-    };
-
-    $scope.dateFormat = "MMM dd ',' yyyy";
-    $scope.altInputFormats = ['M!/d!/yyyy'];
-
-    if ($stateParams.id) {
-        // load up the existing data in our form
-        $scope.title = "Update Game";
-
-        cloudDataGame.get($stateParams.id)
-            .then(function (obj) {
-                existingGame = obj;
-
-                $scope.name = existingGame.name;
-                $scope.start = new Date(existingGame.start);
-                $scope.end = new Date(existingGame.end);
-                $scope.existingGame = true;
-
-                console.log("getting event info for id " + existingGame.event);
-
-                return cloudDataEvent.get(existingGame.eventid); // promise
-            })
-            .then(function (event) {
-
-                existingEvent = event;
-
-                $scope.majors = majors;
-                $scope.major = findTournament(existingEvent);
-
-                return cloudDataCourse.getAll(); //promise
-            })
-            .then(function (courses) {
-
-                $scope.courses = courses;
-                $scope.course = findCourse(existingEvent, courses);
-
-                $scope.loaded = true;
-            })
-            .catch(function (err) {
-                console.log("error getting game " + err);
-            });
-    } else {
-        $scope.title = "New Game";
-
-        // load up the default data structures
-        $scope.name = "";
-        $scope.start = "";
-        $scope.end = "";
-
-        $scope.majors = majors;
-
-        cloudDataCourse.getAll()
-            .then(function (courses) {
-                    $scope.courses = courses;
-                    $scope.loaded = true;
-                },
-                function (err) {
-                    console.log("error getting courses " + err);
-                });
-
+      if (event && event.id == id) {
+        return event;
+      }
     }
 
+    return null;
+  };
 
-    $scope.submit = function () {
+  //
+  // take the full schedule and pre-select any events already
+  // included in the game
+  //
+  var buildSchedule = function(fullSchedule, gameSchedule) {
+    for (var i = 0; i < gameSchedule.length; i++) {
+      var eventGame = gameSchedule[i];
 
-        var getRounds = function (start, end, course) {
-            var rounds = [];
+      var event = findEventById(eventGame.id, fullSchedule);
 
-            // put in the course id for each round of the tournament
-            var oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-            var days = Math.round(Math.abs((start.getTime() - end.getTime()) / (oneDay))) + 1;
+      if (event) {
+        event.selected = true;
+      } else {
+        console.log("No matching event found for " + eventGame.id);
+      }
+    }
 
-            var currentDay = new Date(start.getTime());
+    return fullSchedule;
+  };
 
-            for (var i = 0; i < days; i++) {
-                var round = {
-                    course: course,
-                    date: currentDay
-                };
+  var findGamerById = function(id, gamers) {
+    for (var i = 0; i < gamers.length; i++) {
+      var gamer = gamers[i];
 
-                rounds.push(round);
+      if (gamer && gamer.id == id) {
+        return gamer;
+      }
+    }
 
-                // move to next day
-                currentDay = new Date(currentDay.getTime());
-                currentDay.setDate(currentDay.getDate() + 1);
-            }
+    return null;
+  };
 
-            return rounds;
-        }
+  //
+  // take the total list of gamers and pre-select any already
+  // included in the game
+  //
+  var buildGamerList = function(allGamers, gameGamers) {
+    console.log("allGamers: " + JSON.stringify(allGamers));
 
-        var self = this;
+    for (var i = 0; i < gameGamers.length; i++) {
+      var gamer = gameGamers[i];
 
-        if (existingGame) {
-            console.log("saving existing game...");
+      var foundGamer = findGamerById(gamer.id, allGamers);
 
-            existingGame.name = self.name;
-            existingGame.start = self.start;
-            existingGame.end = self.end;
+      if (foundGamer) {
+        foundGamer.selected = true;
+      } else {
+        console.log("No matching gamer found for " + gamer.id);
+      }
+    }
 
-            // TODO: these saves could happen in parallel
-            cloudDataGame.save(existingGame)
-                .then(function (obj) {
-                    console.log("saved game " + obj.name);
+    return allGamers;
+  };
 
-                    // now save the event information
-                    existingEvent.name = self.name;
-                    existingEvent.start = self.start;
-                    existingEvent.end = self.end;
-                    existingEvent.scoreType = "pga-live-scoring";
-                    existingEvent.provider = self.major.provider;
-                    existingEvent.baseurl = self.major.baseurl;
-                    existingEvent.rounds = [];
+  if ($stateParams.id) {
+    // load up the existing data in our form
+    $scope.title = "Update Game";
 
-                    if (existingEvent.provider == 'pga') {
-                        existingEvent.tournament_id = self.major.id;
-                    } else {
-                        existingEvent.tour = self.major.id;
-                    }
+    fantasy.getGame($stateParams.id)
+      .then(function(obj) {
+        existingGame = obj;
 
-                    existingEvent.rounds = getRounds(self.start, self.end, self.course);
+        console.log("found game!");
+        $scope.name = existingGame.name;
+        $scope.existingGame = true;
 
-                    return cloudDataEvent.save(existingEvent); // promise
-                })
-                .then(function (event) {
-                    console.log("saved event " + event.name);
+        return fantasy.getSchedule(obj.tour, obj.season); // promise
+      })
+      .then(function(schedule) {
+        console.log("loaded full season schedule");
+        var selectedSchedule = buildSchedule(schedule.get(), existingGame.schedule);
 
-                    // return to main page
-                    window.location.href = returnUrl;
-                })
-                .catch(
-                    function (err) {
-                        console.log("error adding game " + err);
-                    });
+        $scope.fullSchedule = selectedSchedule;
 
-        } else {
+        return fantasy.getAllGamers(); // promise
+      })
+      .then(function(gamers) {
 
-            // add event first since, we need this reference for the Game
-            var event = {
-                name: self.name,
-                start: self.start,
-                end: self.end,
-                scoreType: "pga-live-scoring",
-                provider: self.major.provider,
-                baseurl: self.major.baseurl,
-                rounds: []
-            };
+        console.log("loaded gamers");
+        console.log("gamers already playing in this game " + JSON.stringify(existingGame.gamers));
 
-            if (event.provider == 'pga') {
-                event.tournament_id = self.major.id;
-            } else {
-                event.tour = self.major.id;
-            }
+        var selectedGamers = buildGamerList(gamers.get(), existingGame.gamers);
+        $scope.allGamers = selectedGamers;
 
-            event.rounds = getRounds(self.start, self.end, self.course);
+        $scope.loaded = true;
+      })
+      .catch(function(err) {
+        console.log("error getting game " + err);
+      });
+  } else {
+    $scope.title = "New Game";
 
-            console.log("Saving event " + event.name);
+    var season = (new Date()).getFullYear();
+    var tour = "pga";
 
-            cloudDataEvent.add(event)
-                .then(function (event) {
+    $scope.season = season;
+    $scope.tour = tour;
 
-                    console.log("saved event " + event.name + " with id " + event._id);
+    fantasy.getSchedule(tour, season)
+      .then(function(schedule) {
+        console.log("loaded full season schedule");
 
-                    // now add our game record, which points to the event we
-                    // just created prior
-                    var game = {
-                        eventid: event._id,
-                        name: self.name,
-                        start: self.start,
-                        end: self.end,
-                        gamers: []
-                    };
+        $scope.fullSchedule = schedule.get();
 
-                    return cloudDataGame.add(game); //promise
-                })
-                .then(function (game) {
-                    console.log("saved game " + game.name + " with id " + game._id);
+        return fantasy.getAllGamers(); // promise
+      })
+      .then(function(gamers) {
 
-                    // switch to picks page
-                    window.location.href = returnUrl;
-                })
-                .catch(function (err) {
-                    console.log("error adding game " + err);
-                });
-        }
+        console.log("loaded gamers");
 
-    };
+        $scope.allGamers = gamers.get();
+        $scope.name = "";
 
-    $scope.delete = function () {
+        $scope.loaded = true;
+      })
+      .catch(function(err) {
+        console.log("error creating game " + err);
+      }); // load up the default data structures
 
-        var modalInstance = $uibModal.open({
-            animation: $scope.animationsEnabled,
-            templateUrl: 'deleteGame.html',
-            controller: 'ModalGameDeleteCtrl',
-            resolve: {
-                game: function () {
-                    return existingGame;
-                }
-            }
+  }
+
+  $scope.updateEvent = function(item) {
+    console.log("clicked on item " + item.name + " state is " + item.selected);
+  }
+
+  $scope.updateGamer = function(item) {
+    console.log("clicked on item " + item.name + " state is " + item.selected);
+  }
+
+  $scope.submit = function() {
+
+    var self = this;
+
+    var name = self.name;
+
+    var schedule = [];
+
+    for (var i = 0; i < self.fullSchedule.length; i++) {
+      var event = self.fullSchedule[i];
+
+      if (event.selected) {
+        schedule.push({
+          id: event.id
         });
+      }
+    }
 
-        modalInstance.result.then(function (course) {
-            console.log("Deleting game " + game.name);
-            cloudDataCourse.delete(course)
-                .then(function (obj) {
-                        console.log("delete successful");
+    var gamers = [];
 
-                        // switch to players page
-                        window.location.href = returnUrl;
-                    },
-                    function (err) {
-                        console.log("error from delete : " + err);
-                    });
+    for (var i = 0; i < self.allGamers.length; i++) {
+      var gamer = self.allGamers[i];
 
-        }, function () {
-            console.log('Modal dismissed at: ' + new Date());
+      if (gamer.selected) {
+        gamers.push({
+          id: gamer.id
         });
-    };
+      }
+    }
+
+    if (existingGame) {
+      console.log("saving existing game...");
+
+      fantasy.updateGame($stateParams.id, name, schedule, gamers)
+        .then(function(game) {
+          console.log("updated game " + game.name);
+
+          // return to main page
+          window.location.href = returnUrl;
+        })
+        .catch(
+          function(err) {
+            console.log("error updating game " + err);
+          });
+
+    } else {
+
+      console.log("creating new game...");
+
+      fantasy.newGame(self.season, self.tour, name, schedule, gamers)
+        .then(function(game) {
+          console.log("created game " + game.name);
+
+          // return to main page
+          window.location.href = returnUrl;
+        })
+        .catch(
+          function(err) {
+            console.log("error updating game " + err);
+          });
+    }
+
+  };
+
+  $scope.delete = function() {
+
+    var modalInstance = $uibModal.open({
+      animation: $scope.animationsEnabled,
+      templateUrl: 'deleteGame.html',
+      controller: 'ModalGameDeleteCtrl',
+      resolve: {
+        game: function() {
+          return existingGame;
+        }
+      }
+    });
+
+    modalInstance.result.then(function(course) {
+      console.log("Deleting game " + game.name);
+      cloudDataCourse.delete(course)
+        .then(function(obj) {
+            console.log("delete successful");
+
+            // switch to players page
+            window.location.href = returnUrl;
+          },
+          function(err) {
+            console.log("error from delete : " + err);
+          });
+
+    }, function() {
+      console.log('Modal dismissed at: ' + new Date());
+    });
+  };
 
 };
 
@@ -312,16 +271,16 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, cloudDataGame, 
 // It is not the same as the $modal service used above.
 
 angular.module('CloudApp')
-    .controller('ModalGameDeleteCtrl', ['$scope', '$uibModalInstance', 'course', ModalGameDeleteCtrl]);
+  .controller('ModalGameDeleteCtrl', ['$scope', '$uibModalInstance', 'course', ModalGameDeleteCtrl]);
 
 function ModalGameDeleteCtrl($scope, $uibModalInstance, game) {
-    $scope.game = game;
+  $scope.game = game;
 
-    $scope.ok = function () {
-        $uibModalInstance.close(game);
-    };
+  $scope.ok = function() {
+    $uibModalInstance.close(game);
+  };
 
-    $scope.cancel = function () {
-        $uibModalInstance.dismiss('cancel');
-    };
+  $scope.cancel = function() {
+    $uibModalInstance.dismiss('cancel');
+  };
 }

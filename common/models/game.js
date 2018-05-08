@@ -12,6 +12,115 @@ module.exports = function(Game) {
    **/
   Game.Promise = {};
 
+  Game.Promise.create = function(season, tour, name, schedule, gamers) {
+    return new Promise(function(resolve, reject) {
+
+      var record = {};
+      record.data = {};
+      record.data.tour = tour;
+      record.data.season = season;
+      record.data.name = name;
+      record.data.schedule = schedule;
+      record.data.gamers = gamers;
+      record.data.events = [];
+
+      Game.create(record, function(err, record) {
+        if (!err && record) {
+
+          logger.log("created game: " + record.id);
+
+          // initialize the roster after creating the
+          // game record
+          var Roster = app.models.Roster.Promise;
+
+          Roster.init(record.id).then(function(roster) {
+            resolve(record);
+          }, function(err) {
+            reject(err);
+          });
+
+        } else {
+          if (!record) {
+            var str = "Could not create game";
+            logger.error(str);
+            reject(str);
+          } else {
+            var str = "Error!" + JSON.stringify(err);
+            logger.error(str);
+            reject(str);
+          }
+        }
+      });
+
+    });
+  };
+
+  var findEventById = function(id, schedule) {
+    for (var i = 0; i < schedule.length; i++) {
+      var event = schedule[i];
+
+      if (event && (id == event.id)) {
+        return event;
+      }
+    }
+
+    console.log("didn't find id " + id + " in schedule " + JSON.stringify(schedule));
+
+    return null;
+  };
+
+  Game.Promise.update = function(id, name, schedule, gamers) {
+    return new Promise(function(resolve, reject) {
+      // look up this game's roster, then insert or update the player records
+
+      Game.Promise.findById(id)
+        .then(function(game) {
+
+          // go through the schedule and eliminate any orphaned events
+          var events = [];
+
+          for (var i = 0; i < game.data.events.length; i++) {
+            var event = game.data.events[i];
+
+            if (findEventById(event.id, schedule)) {
+              events.push(event);
+            } else {
+              console.log("would have removed event " + JSON.stringify(event));
+              events.push(event); // remove this
+            }
+          }
+
+          game.data.name = name;
+          game.data.schedule = schedule;
+          game.data.gamers = gamers;
+          game.data.events = events;
+
+          // now put the game back
+
+          Game.replaceOrCreate(game, function(err, record) {
+            if (!err && record) {
+
+              logger.log("updated game " + id);
+              resolve(record);
+
+            } else {
+              if (!record) {
+                var str = "Could not find game!";
+                reject(str);
+              } else {
+                var str = "Error!" + JSON.stringify(err);
+                reject(str);
+              }
+            }
+          });
+
+        }, function(err) {
+          reject(err);
+        });
+    });
+
+  };
+
   Game.Promise.findById = function(id) {
     return new Promise(function(resolve, reject) {
       Game.findById(id, function(err, record) {
@@ -54,24 +163,6 @@ module.exports = function(Game) {
     });
   };
 
-  var findGamerForEvent = function(event, gamerid) {
-    var gamers = event.gamers;
-
-    if (gamers) {
-
-      // now look for our gamerid in the list
-      for (var g = 0; g < gamers.length; g++) {
-        var gamer = gamers[g];
-
-        if (gamer.id == gamerid) {
-          return gamer;
-        }
-      }
-    }
-
-    return null;
-  };
-
   //
   // get all of the games that this gamer is participating in
   //
@@ -82,23 +173,14 @@ module.exports = function(Game) {
     for (var i = 0; i < records.length; i++) {
       var record = records[i];
       var game = record.data;
-      var events = game.events;
+      var gamers = game.gamers;
 
-      if (events) {
-
-        for (var e = 0; e < events.length; e++) {
-          var event = events[e];
-
-          var gamer = findGamerForEvent(event, gamerid);
-
-          if (gamer) {
-            // found a match, add this record to our list and continue
-            logger.log("Found game!: " + JSON.stringify(record));
-            games.push(record);
-            break;
-          }
-        }
+      if (findGamerById(gamerid, gamers)) {
+        // found a match, add this record to our list and continue
+        logger.log("Found game!: " + JSON.stringify(record));
+        games.push(record);
       }
+
     }
 
     return games;
@@ -299,40 +381,33 @@ module.exports = function(Game) {
 
       var tourSeason = new TourSeason(game.season, game.tour);
 
-      if (events.length > 0) {
+      var Roster = app.models.Roster.Promise;
 
-        var Roster = app.models.Roster.Promise;
+      Roster.findByGameId(record.id).then(function(roster) {
+        var requests = [];
 
-        Roster.findByGameId(record.id).then(function(roster) {
-          var requests = [];
+        for (var e = 0; e < events.length; e++) {
+          var event = events[e];
 
-          for (var e = 0; e < events.length; e++) {
-            var event = events[e];
+          console.log("found event " + event.id);
 
-            console.log("found event " + event.id);
+          requests.push(processScore(tourSeason, roster, event));
+        }
 
-            requests.push(processScore(tourSeason, roster, event));
-          }
-
-          Promise.all(requests).then(function(events) {
-            console.log("Promise.all processed score data for game " + record.id);
-            // after all request callbacks complete, call our main callback
-            resolve(record);
-
-          }, function(err) {
-            reject(err);
-          });
+        Promise.all(requests).then(function(events) {
+          console.log("Promise.all processed score data for game " + record.id);
+          // after all request callbacks complete, call our main callback
+          resolve(record);
 
         }, function(err) {
-          var str = "No roster found for this game!"
-          console.error(str);
-          reject(str);
+          reject(err);
         });
-      } else {
-        var str = "no events found!";
-        console.log(str)
+
+      }, function(err) {
+        var str = "No roster found for this game!"
+        console.error(str);
         reject(str);
-      }
+      });
     });
 
   };
@@ -442,6 +517,8 @@ module.exports = function(Game) {
             games = records;
           }
 
+          console.log("search for gamerid " + gamerid + " : " + JSON.stringify(games) );
+
           if (details) {
             // add in season and scoring details for each game
 
@@ -475,18 +552,20 @@ module.exports = function(Game) {
   var highlightLeader = function(seasonTotals) {
     var leader = null;
 
-    for (var id in seasonTotals) {
-      if (leader) {
-        // see if this score is better
-        if (seasonTotals[id].total > seasonTotals[leader].total) {
+    if (seasonTotals) {
+      for (var id in seasonTotals) {
+        if (leader) {
+          // see if this score is better
+          if (seasonTotals[id].total > seasonTotals[leader].total) {
+            leader = id;
+          }
+        } else {
           leader = id;
         }
-      } else {
-        leader = id;
       }
-    }
 
-    seasonTotals[leader].leader = true;
+      seasonTotals[leader].leader = true;
+    }
 
     return seasonTotals;
   };
@@ -512,13 +591,7 @@ module.exports = function(Game) {
     var gamerid = gamer.id;
 
     if (!seasonTotals[gamerid]) {
-      // first event for this gamer, intialize the data structure
-      seasonTotals[gamerid] = {
-        "total": gamerTotal,
-        "name": gamer.name
-      };
-
-      console.log("set seasonTotals " + JSON.stringify(seasonTotals));
+      console.log("ERROR: no season totals for gamer " + gamerid);
     } else {
       console.log("adding to totals " + gamerid + "gamerTotal=" + gamerTotal);
       seasonTotals[gamerid]["total"] += gamerTotal;
@@ -526,9 +599,37 @@ module.exports = function(Game) {
 
   };
 
+  var findGamerById = function(id, gamers) {
+    for (var i = 0; i < gamers.length; i++) {
+      var gamer = gamers[i];
+
+      if (gamer && (id == gamer.id)) {
+        return gamer;
+      }
+    }
+
+    return null;
+  };
+
+  var initSeasonTotals = function(gamers) {
+    var seasonTotals = {};
+
+    for (var i = 0; i < gamers.length; i++) {
+      var gamer = gamers[i];
+
+      seasonTotals[gamer.id] = {
+        "total": 0,
+        "name": gamer.name
+      };
+
+    }
+
+    return seasonTotals;
+  };
+
   var tallyTotalScores = function(record) {
     // tally individual event scores and season totals
-    var seasonTotals = {};
+    var seasonTotals = initSeasonTotals(record.data.gamers);
 
     var events = record.data.events;
     for (var e = 0; e < events.length; e++) {
@@ -550,25 +651,26 @@ module.exports = function(Game) {
     }
 
     // add season totals to top level record
+    console.log("seasonTotals : " + JSON.stringify(seasonTotals));
     highlightLeader(seasonTotals);
 
     var gamers = [];
 
     for (var id in seasonTotals) {
-      var game = {
-        "id": id,
-        "name": seasonTotals[id].name,
-        "total": seasonTotals[id].total
-      };
+      var gamer = findGamerById(id, record.data.gamers);
 
-      if (seasonTotals[id].leader) {
-        game.leader = true;
+      if (gamer) {
+        gamer.name = seasonTotals[id].name;
+        gamer.total = seasonTotals[id].total;
+
+        if (seasonTotals[id].leader) {
+          gamer.leader = true;
+        }
+      } else {
+        console.log("could not find gamer " + id + " in gamers list for this game.");
       }
 
-      gamers.push(game);
     }
-
-    record.data.gamers = gamers;
 
     return record;
   };
@@ -581,6 +683,7 @@ module.exports = function(Game) {
     return new Promise(function(resolve, reject) {
       var game = record.data;
       var events = game.events;
+      var gamers = game.gamers;
       var Gamer = app.models.Gamer.Promise;
       var requests = [];
 
@@ -589,6 +692,8 @@ module.exports = function(Game) {
 
         requests.push(Gamer.findGamerNames(event.gamers));
       }
+
+      requests.push(Gamer.findGamerNames(gamers));
 
       Promise.all(requests).then(function(gamers) {
         resolve(record);

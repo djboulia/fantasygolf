@@ -93,10 +93,10 @@ exports.tournamentOpens = function(start) {
   var opens = start.getTime() - daysInAdvance;
 
   return opens;
-}
+};
 
 exports.tournamentIsOpen = function(date, start, end) {
-  var opens = tournamentOpens(start);
+  var opens = exports.tournamentOpens(start);
 
   console.log("tournamentIsOpen: tournament opens for picks on: " +
     dateTimeString(new Date(opens)) + " current time: " + dateTimeString(date));

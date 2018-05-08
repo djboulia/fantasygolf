@@ -7,7 +7,7 @@
         <rd-widget-header icon="fa-trophy" title="Games for {{username}}">
         </rd-widget-header>
         <rd-widget-body classes="small no-padding">
-          <h4 style="text-align:center">Current Seasons</h4>
+          <h4 style="text-align:center">Current Games</h4>
           <div ng-repeat="active in activeSeasons" class="table-responsive">
             <table class="table">
               <tbody id="nextevent">
@@ -41,6 +41,9 @@
 
               </tbody>
             </table>
+          </div>
+          <div ng-if="!activeSeasons.length" style="text-align:center">
+            No active games.
           </div>
         </rd-widget-body>
         <rd-widget>

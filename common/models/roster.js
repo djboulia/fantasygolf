@@ -153,9 +153,61 @@ module.exports = function(Roster) {
 
   }
 
+  var updateOrCreateRoster = function(year, tour, roster) {
+    return new Promise(function(resolve, reject) {
+      // now go get the tour data to load up the roster
+      // we use the world rankings for the given tour and year
+      // take the top 200 and load them in.
+
+      var tourSeason = new TourSeason(year, tour);
+
+      tourSeason.getRankings(function(players) {
+
+        if (!players) {
+          var str = "Couldn't load tour player info!";
+          reject(str);
+          return;
+        }
+
+        var newRoster = [];
+        for (var i = 0; i < Math.min(players.length, 200); i++) {
+          var player = players[i];
+
+          var rosterEntry = RosterEntry.undrafted(player.player_id, player.name);
+
+          newRoster.push(rosterEntry);
+        }
+
+        roster.data.roster = newRoster;
+        roster.data.transactions = [];
+
+        // now create or replace the roster contents
+
+        Roster.replaceOrCreate(roster, function(err, record) {
+          if (!err && record) {
+
+            logger.log("updated roster for game " + roster.data.game);
+            resolve(record);
+
+          } else {
+            if (!record) {
+              var str = "Could not find rosters!";
+              reject(str);
+            } else {
+              var str = "Error!" + JSON.stringify(err);
+              reject(str);
+            }
+          }
+        });
+      });
+    });
+  };
+
   Roster.Promise.init = function(gameid) {
     return new Promise(function(resolve, reject) {
       var Game = app.models.Game.Promise;
+
+      console.log("Roster.init");
 
       Game.findById(gameid)
         .then(function(game) {
@@ -163,57 +215,32 @@ module.exports = function(Roster) {
           var year = game.data.season;
           var tour = game.data.tour;
 
+          // see if we have a roster record for this game
+          // if we do, re-initialize it, otherwise create new
           rawFindByGameId(gameid).then(function(roster) {
+            console.log("re-initializing existing roster");
 
-            // now go get the tour data to load up the roster
-            // we use the world rankings for the given tour and year
-            // take the top 200 and load them in.
-
-            var tourSeason = new TourSeason(year, tour);
-
-            tourSeason.getRankings(function(players) {
-
-              if (!players) {
-                var str = "Couldn't load tour player info!";
-                reject(str);
-                return;
-              }
-
-              var newRoster = [];
-              for (var i = 0; i < Math.min(players.length, 200); i++) {
-                var player = players[i];
-
-                var rosterEntry = RosterEntry.undrafted(player.player_id, player.name);
-
-                newRoster.push(rosterEntry);
-              }
-
-              roster.data.roster = newRoster;
-              roster.data.transactions = [];
-
-              // now put the roster back
-
-              Roster.upsert(roster, function(err, record) {
-                if (!err && record) {
-
-                  logger.log("updated roster for game " + id);
-                  resolve(record);
-
-                } else {
-                  if (!record) {
-                    var str = "Could not find rosters!";
-                    reject(str);
-                  } else {
-                    var str = "Error!" + JSON.stringify(err);
-                    reject(str);
-                  }
-                }
+            updateOrCreateRoster(year, tour, roster)
+              .then(function(roster) {
+                resolve(roster);
+              }, function(err) {
+                reject(err);
               });
-            });
-
 
           }, function(err) {
-            reject(err);
+            // no existing roster found, create a new one
+            console.log("initializing new roster");
+
+            var roster = {};
+            roster.data = {};
+            roster.data.game = gameid;
+
+            updateOrCreateRoster(year, tour, roster)
+              .then(function(roster) {
+                resolve(roster);
+              }, function(err) {
+                reject(err);
+              });
           });
 
         }, function(err) {
