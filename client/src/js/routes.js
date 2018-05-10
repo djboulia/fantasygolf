@@ -61,11 +61,11 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'Leaderboard',
                 crumbs: 'Home / Games / Leaderboard'
             })
-            .state('eventleaders/id', {
-                url: '/eventleaders/id/:id',
+            .state('eventleaders/id/eventid', {
+                url: '/eventleaders/id/eventid/:id/:eventid',
                 templateUrl: 'templates/eventleaders.html',
-                label: 'Tournament Leaders',
-                crumbs: 'Home / Golf Tournaments / Tournament Leaders'
+                label: 'Tournament Scores',
+                crumbs: 'Home / Golf Tournaments / Tournament Scores'
             })
             .state('roster/id', {
                 url: '/roster/id/:id',
@@ -103,36 +103,6 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'Golf Tournament',
                 crumbs: 'Home / Golf Tournament'
             })
-            .state('event', {
-                url: '/event',
-                templateUrl: 'templates/event.html',
-                label: 'Tournament',
-                crumbs: 'Home / Golf Tournaments / Tournament'
-            })
-            .state('event/id', {
-                url: '/event/id/:id',
-                templateUrl: 'templates/event.html',
-                label: 'Tournament',
-                crumbs: 'Home / Golf Tournaments / Tournament'
-            })
-            .state('eventdetails/id', {
-                url: '/eventdetails/id/:id',
-                templateUrl: 'templates/eventdetails.html',
-                label: 'Tournament Details',
-                crumbs: 'Home / Golf Tournaments / Tournament Details'
-            })
-            .state('eventdetails/id/round', {
-                url: '/eventdetails/id/round/:id/:roundid',
-                templateUrl: 'templates/round.html',
-                label: 'Round',
-                crumbs: 'Home / Golf Tournament / Tournament / Round'
-            })
-            .state('round', {
-                url: '/round',
-                templateUrl: 'templates/round.html',
-                label: 'Round Detail',
-                crumbs: 'Home / Round'
-            })
             .state('scores', {
                 url: '/scores',
                 templateUrl: 'templates/scores.html',
@@ -168,30 +138,6 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 templateUrl: 'templates/user.html',
                 label: 'User',
                 crumbs: 'Home / Users / User'
-            })
-            .state('courses', {
-                url: '/courses',
-                templateUrl: 'templates/courses.html',
-                label: 'Courses',
-                crumbs: 'Home / Courses'
-            })
-            .state('course', {
-                url: '/course',
-                templateUrl: 'templates/course.html',
-                label: 'Course',
-                crumbs: 'Home / Courses / Course'
-            })
-            .state('course/id', {
-                url: '/course/id/:id',
-                templateUrl: 'templates/course.html',
-                label: 'Course',
-                crumbs: 'Home / Courses / Course'
-            })
-            .state('coursedetails/id', {
-                url: '/coursedetails/id/:id',
-                templateUrl: 'templates/coursedetails.html',
-                label: 'Course Details',
-                crumbs: 'Home / Courses / Course Details'
             })
             .state('login', {
                 url: '/login',

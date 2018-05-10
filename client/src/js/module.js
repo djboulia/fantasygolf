@@ -1,8 +1,7 @@
 angular.module('CloudApp',
                ['ui.bootstrap', 'ui.router',
                 'ngCookies', 'ngRoute', 'ngSanitize', 'ngAria', 'ngMaterial', 'lbServices',
-                'GolfPicks.cloud', 'GolfPicks.data', 'GolfPicks.weatherData', 'GolfPicks.mapWidget',
-                'GolfPicks.gameData', 'GolfPicks.gameUtils', 'GolfPicks.eventUtils'])
+                'GolfPicks.cloud', 'GolfPicks.data', 'GolfPicks.weatherData', 'GolfPicks.mapWidget'])
         .run(run);
 
     run.$inject = ['$rootScope', '$location', '$cookieStore', '$http', 'cloudDataCurrentUser'];

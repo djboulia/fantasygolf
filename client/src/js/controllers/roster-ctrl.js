@@ -1,17 +1,16 @@
 angular.module('CloudApp')
   .controller('RosterCtrl', ['$scope', '$stateParams', '$cookieStore',
     '$location', '$sanitize', 'cloudDataCurrentUser',
-    'cdFantasy', 'gameUtils', RosterCtrl
+    'cdFantasy', RosterCtrl
   ]);
 
 
 function RosterCtrl($scope, $stateParams, $cookieStore,
-  $location, $sanitize, currentUser, fantasy, gameUtils) {
+  $location, $sanitize, currentUser, fantasy) {
 
   var changed = false;
   var gameid = $stateParams.id;
   var players = [];
-  var logger = gameUtils.logger;
   var currentGame = undefined;
   var editUrl = '#/rosteredit/id/player/';
 
@@ -88,7 +87,7 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
           $scope.loaded = true;
         },
         function(err) {
-          logger.error("Couldn't access roster!");
+          console.error("Couldn't access roster!");
 
           $scope.errorMessage = "Couldn't access roster!";
         });
@@ -127,7 +126,7 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
             $scope.picksMessage = "Roster saved.";
           },
           function(err) {
-            logger.error("Couldn't access roster!");
+            console.error("Couldn't access roster!");
 
             $scope.errorMessage = "Couldn't access roster!";
           });

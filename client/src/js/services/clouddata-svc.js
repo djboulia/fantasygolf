@@ -409,13 +409,15 @@ angular.module('GolfPicks.cloud', [])
       var picks = gamer.picks;
       var picksArray = [];
 
-      for (var i = 0; i < picks.length; i++) {
-        var pick = picks[i];
+      if (picks) {
+        for (var i = 0; i < picks.length; i++) {
+          var pick = picks[i];
 
-        picksArray.push(new fantasyPick(pick));
+          picksArray.push(new fantasyPick(pick));
+        }
+
+        this.picks = picksArray;
       }
-
-      this.picks = picksArray;
     };
 
     var fantasyEvent = function(event) {
@@ -762,7 +764,7 @@ angular.module('GolfPicks.cloud', [])
 
         return deferred.promise;
       },
-      getSchedule: function(tour, year) {
+      getTourSchedule: function(tour, year) {
         var deferred = $q.defer();
 
         console.log("About to get schedule for " + tour + " and season " + year);
@@ -845,6 +847,49 @@ angular.module('GolfPicks.cloud', [])
             console.log("Updated game");
             console.log(JSON.stringify(obj));
             deferred.resolve(obj);
+          },
+          function(err) {
+            deferred.reject({
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getSchedule: function(id) {
+        var deferred = $q.defer();
+
+        console.log("About to get schedule for game" + id);
+
+        Fantasy.getSchedule({
+            id: id
+          },
+          function(obj) {
+            console.log("Got schedule");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(obj.schedule);
+          },
+          function(err) {
+            deferred.reject({
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getEvent: function(gameid, eventid) {
+        var deferred = $q.defer();
+
+        console.log("About to get event " + eventid + " for game " + gameid);
+
+        Fantasy.getEvent({
+            id: gameid,
+            eventid: eventid
+          },
+          function(obj) {
+            console.log("Got event");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(obj.event);
           },
           function(err) {
             deferred.reject({

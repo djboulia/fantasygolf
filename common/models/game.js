@@ -1,16 +1,72 @@
 var logger = require('../lib/logger.js');
 var DateUtils = require('../lib/dateutils.js');
 var TourSeason = require('../lib/tourseason.js');
+var TourEvent = require('../lib/tourevent.js');
 
 module.exports = function(Game) {
 
   var app = require('../../server/server');
+
+  //
+  // just get the base of the url as the tournament id
+  //
+  var tournamentId = function(str) {
+    var ndx = str.lastIndexOf("/");
+    if (ndx>0) {
+      return str.substring(ndx+1);
+    } else {
+      return str;
+    }
+  }
 
   /**
    * create promise-friendly versions of key functions we use internally
    * in the other modules
    **/
   Game.Promise = {};
+
+  Game.Promise.getTourSchedule = function( tour, year ) {
+    return new Promise(function(resolve, reject) {
+
+    var tourSeason = new TourSeason(year, tour);
+
+    tourSeason.getSchedule( (json) => {
+
+      if (json) {
+
+        console.log("getTourSchedule " + JSON.stringify(json));
+
+        var records = [];
+
+        var schedule = json.schedule;
+        for (var i=0; i<schedule.length; i++) {
+          var tourEvent = schedule[i];
+
+          // build a list of valid tour events.  only include stroke play format
+          if (tourEvent.format == "stroke") {
+            var record = {};
+
+            record.startDate = tourEvent.startDate;
+            record.endDate = tourEvent.endDate;
+            record.name = tourEvent.tournament;
+            record.id = tournamentId(tourEvent.link.href);
+
+            records.push(record);
+          }
+        }
+
+        resolve(records);
+
+      } else {
+        var err = "json is null";
+        reject(err);
+      }
+
+    });
+
+  });
+
+    };
 
   Game.Promise.create = function(season, tour, name, schedule, gamers) {
     return new Promise(function(resolve, reject) {
@@ -177,7 +233,8 @@ module.exports = function(Game) {
 
       if (findGamerById(gamerid, gamers)) {
         // found a match, add this record to our list and continue
-        logger.log("Found game!: " + JSON.stringify(record));
+        logger.log("Found game!: " + record.id);
+//        logger.log("Found game!: " + JSON.stringify(record));
         games.push(record);
       }
 
@@ -216,6 +273,7 @@ module.exports = function(Game) {
   // is complete (all events are in the past), then return null
   //
   var findNextEvent = function(game) {
+
     // sort the schedule by date first
     var schedule = game.data.schedule;
     schedule.sort(function(a, b) {
@@ -325,7 +383,7 @@ module.exports = function(Game) {
   var processSeason = function(tourSeason, event) {
 
     return new Promise(function(resolve, reject) {
-      tourSeason.getEvent(event.id, (json) => {
+      tourSeason.getFantasyEvent(event.id, (json) => {
 
         if (json) {
 
@@ -412,83 +470,386 @@ module.exports = function(Game) {
 
   };
 
-  var findScoreByPlayerId = function(scores, playerid) {
-    for (var s = 0; s < scores.length; s++) {
-      var score = scores[s];
+  var addTournaments = function(record) {
+    console.log("in addTournaments");
 
-      if (score.id == playerid) {
-        return score;
-      }
-    }
-
-    return null;
-  };
-
-  var findPlayerInRoster = function(roster, id) {
-    var found = null;
-
-    var rosterData = roster.data.roster;
-    for (var r = 0; r < rosterData.length; r++) {
-      var player = rosterData[r];
-
-      if (id == player.player_id) {
-        found = player;
-      }
-    }
-
-    return found;
-  };
-
-  //
-  // we get the scoring data for this event from our back end
-  // service.  then we fluff up the picks for this gamer with the
-  // scoring information.
-  //
-  var processScore = function(tourSeason, roster, event) {
     return new Promise(function(resolve, reject) {
-      tourSeason.getEvent(event.id, (json) => {
+      var game = record.data;
+      var schedule = game.schedule;
 
-        if (json) {
+      Game.Promise.getTourSchedule(game.tour, game.season)
+      .then(function(records) {
 
-          // remember the event name
-          event.name = json.name;
+        // loop through season schedule and map names to this event
+        for (var i=0; i<schedule.length; i++) {
+          var event = schedule[i];
 
-          if (event.gamers) {
-            for (var g = 0; g < event.gamers.length; g++) {
-              var gamer = event.gamers[g];
+          var tourEvent = findEventById(event.id, records);
 
-              var picks = gamer.picks;
-              for (var p = 0; p < picks.length; p++) {
-                var pick = picks[p];
+          if (tourEvent) {
+            event.name = tourEvent.name;
+          } else {
+            console.log("could not find tour event for " + JSON.stringify(event));
+          }
+        }
 
-                var score = findScoreByPlayerId(json.scores, pick.id);
+        resolve(record);
+      }, function(err) {
+        reject(err);
+      });
 
-                if (score) {
-                  pick.name = score.name;
-                  pick.score_details = score.score_details;
+    });
+  };
 
-                  //                  console.log("found picks " + JSON.stringify(pick));
+
+var findScoreByPlayerId = function(scores, playerid) {
+  for (var s = 0; s < scores.length; s++) {
+    var score = scores[s];
+
+    if (score.id == playerid) {
+      return score;
+    }
+  }
+
+  return null;
+};
+
+var findPlayerInRoster = function(roster, id) {
+  var found = null;
+
+  var rosterData = roster.data.roster;
+  for (var r = 0; r < rosterData.length; r++) {
+    var player = rosterData[r];
+
+    if (id == player.player_id) {
+      found = player;
+    }
+  }
+
+  return found;
+};
+
+//
+// we get the scoring data for this event from our back end
+// service.  then we fluff up the picks for this gamer with the
+// scoring information.
+//
+var processScore = function(tourSeason, roster, event) {
+  return new Promise(function(resolve, reject) {
+    tourSeason.getFantasyEvent(event.id, (json) => {
+
+      if (json) {
+
+        // remember the event name
+        event.name = json.name;
+        event.start = json.start;
+        event.end = json.end;
+
+        if (event.gamers) {
+          for (var g = 0; g < event.gamers.length; g++) {
+            var gamer = event.gamers[g];
+
+            var picks = gamer.picks;
+            for (var p = 0; p < picks.length; p++) {
+              var pick = picks[p];
+
+              var score = findScoreByPlayerId(json.scores, pick.id);
+
+              if (score) {
+                pick.name = score.name;
+                pick.score_details = score.score_details;
+
+                //                  console.log("found picks " + JSON.stringify(pick));
+              } else {
+                // no scores for this player, just update the pick name from our roster
+                // this indicates someone started a player who wasn't in the field
+                console.log("didn't find scores for " + pick.id);
+
+                var player = findPlayerInRoster(roster, pick.id);
+
+                if (player) {
+                  pick.name = player.name;
+                  pick.score_details = {
+                    total: 0
+                  };
                 } else {
-                  // no scores for this player, just update the pick name from our roster
-                  // this indicates someone started a player who wasn't in the field
-                  console.log("didn't find scores for " + pick.id);
-
-                  var player = findPlayerInRoster(roster, pick.id);
-
-                  if (player) {
-                    pick.name = player.name;
-                    pick.score_details = {
-                      total: 0
-                    };
-                  } else {
-                    console.log("Couldn't find player " + pick.id + " in roster.");
-                  }
+                  console.log("Couldn't find player " + pick.id + " in roster.");
                 }
               }
-
             }
 
           }
+
+        }
+
+        resolve(event);
+      } else {
+        var err = "json is null";
+        reject(err);
+      }
+
+    });
+  });
+
+};
+
+Game.Promise.search = function(gamerid, details) {
+  return new Promise(function(resolve, reject) {
+    Game.Promise.find().then(function(records) {
+
+      var games = [];
+
+      if (records) {
+
+        // if a gamerid is specified, filter based on that, otherwise
+        // just include all records
+        if (gamerid) {
+          games = findGames(records, gamerid);
+        } else {
+          games = records;
+        }
+
+        console.log("search for gamerid " + gamerid);
+        //        console.log("search for gamerid " + gamerid + " : " + JSON.stringify(games));
+
+        if (details) {
+          // add in season detailsfor each game
+          addActiveSeasons(games, function(games) {
+            resolve(games);
+          });
+
+        } else {
+          resolve(games);
+        }
+
+      } else {
+        var str = "No game records found for gamer " + gamerid;
+        logger.log(str);
+        reject(str);
+      }
+    }, function(err) {
+      reject(err);
+    });
+
+  });
+};
+
+// find the gamer who is currently leading the season totals and
+// flag them as the leader
+var highlightLeader = function(seasonTotals) {
+  var leader = null;
+
+  if (seasonTotals) {
+    for (var id in seasonTotals) {
+      if (leader) {
+        // see if this score is better
+        if (seasonTotals[id].total > seasonTotals[leader].total) {
+          leader = id;
+        }
+      } else {
+        leader = id;
+      }
+    }
+
+    seasonTotals[leader].leader = true;
+  }
+
+  return seasonTotals;
+};
+
+var picksTotal = function(gamer) {
+  var gamerTotal = 0;
+
+  for (var p = 0; p < gamer.picks.length; p++) {
+    var pick = gamer.picks[p];
+
+    if (pick.score_details && !isNaN(pick.score_details.total)) {
+      gamerTotal += pick.score_details.total;
+    } else {
+      console.error("ERROR: could not get total for picks.score_details" + JSON.stringify(pick.score_details));
+    }
+    console.log("gamerTotal = " + gamerTotal);
+  }
+
+  return gamerTotal;
+};
+
+var addToSeasonTotals = function(gamer, seasonTotals, gamerTotal) {
+  var gamerid = gamer.id;
+
+  if (!seasonTotals[gamerid]) {
+    console.log("ERROR: no season totals for gamer " + gamerid);
+  } else {
+    console.log("adding to totals " + gamerid + "gamerTotal=" + gamerTotal);
+    seasonTotals[gamerid]["total"] += gamerTotal;
+  }
+
+};
+
+var findGamerById = function(id, gamers) {
+  for (var i = 0; i < gamers.length; i++) {
+    var gamer = gamers[i];
+
+    if (gamer && (id == gamer.id)) {
+      return gamer;
+    }
+  }
+
+  return null;
+};
+
+var initSeasonTotals = function(gamers) {
+  var seasonTotals = {};
+
+  for (var i = 0; i < gamers.length; i++) {
+    var gamer = gamers[i];
+
+    seasonTotals[gamer.id] = {
+      "total": 0,
+      "name": gamer.name
+    };
+
+  }
+
+  return seasonTotals;
+};
+
+var tallyTotalScores = function(record) {
+  // tally individual event scores and season totals
+  var seasonTotals = initSeasonTotals(record.data.gamers);
+
+  var events = record.data.events;
+  for (var e = 0; e < events.length; e++) {
+    var event = events[e];
+
+    var gamers = record.data.gamers;
+
+    for (var g = 0; g < gamers.length; g++) {
+      var gamer = gamers[g];
+
+      var gamerPicks = findGamerById(gamer.id, event.gamers);
+
+      if (gamerPicks){
+        // there are picks for this gamer, tally them up
+        var gamerTotal = 0;
+
+        gamerTotal += picksTotal(gamerPicks);
+
+        gamerPicks.total = gamerTotal;
+
+        addToSeasonTotals(gamerPicks, seasonTotals, gamerTotal);
+      } else {
+        // no picks found for this gamer, build up an empty record
+        console.log("no picks found for gamer " + gamer.name + " in event " + event.name);
+
+        gamerPicks = {};
+        gamerPicks.id = gamer.id;
+        gamerPicks.name = gamer.name;
+        gamerPicks.total = 0;
+
+        event.gamers.push(gamerPicks);
+      }
+    }
+
+  }
+
+  // add season totals to top level record
+  console.log("seasonTotals : " + JSON.stringify(seasonTotals));
+  highlightLeader(seasonTotals);
+
+  var gamers = [];
+
+  for (var id in seasonTotals) {
+    var gamer = findGamerById(id, record.data.gamers);
+
+    if (gamer) {
+      gamer.name = seasonTotals[id].name;
+      gamer.total = seasonTotals[id].total;
+
+      if (seasonTotals[id].leader) {
+        gamer.leader = true;
+      }
+    } else {
+      console.log("could not find gamer " + id + " in gamers list for this game.");
+    }
+
+  }
+
+  return record;
+};
+
+//
+// go through each tour event in this game and fluff up the
+// gamer names so we send back a human readable name for each gamer
+//
+var addGamerData = function(record) {
+  return new Promise(function(resolve, reject) {
+    var game = record.data;
+    var events = game.events;
+    var gamers = game.gamers;
+    var Gamer = app.models.Gamer.Promise;
+    var requests = [];
+
+    for (var e = 0; e < events.length; e++) {
+      var event = events[e];
+
+      requests.push(Gamer.findGamerNames(event.gamers));
+    }
+
+    requests.push(Gamer.findGamerNames(gamers));
+
+    Promise.all(requests).then(function(gamers) {
+      resolve(record);
+    }, function(err) {
+      reject(err);
+    });
+  });
+
+};
+
+Game.Promise.findByIdWithScoring = function(id) {
+  return new Promise(function(resolve, reject) {
+
+    Game.Promise.findById(id).then(function(record) {
+      logger.log("Found game: " + JSON.stringify(record));
+
+      addScoring(record).then(function(record) {
+
+        return addGamerData(record);  // promise
+
+      })
+      .then(function(record) {
+
+        tallyTotalScores(record);
+
+        console.log("findByIdWithString resolving promise");
+        resolve(record);
+      }, function(err) {
+        reject(err);
+      });
+
+    }, function(err) {
+      reject(err);
+    });
+
+  });
+};
+
+Game.Promise.getEvent = function(gameid, eventid) {
+  return new Promise(function(resolve, reject) {
+
+    Game.Promise.findById(gameid).then(function(record) {
+      var game = record.data;
+
+      logger.log("Found game: " + JSON.stringify(game));
+
+      // load the event info for this tournament
+      var tourSeason = new TourSeason(game.season, game.tour);
+
+      tourSeason.getEvent(eventid, (json) => {
+
+        if (json) {
+          var event = TourEvent.format(json);
 
           resolve(event);
         } else {
@@ -497,254 +858,48 @@ module.exports = function(Game) {
         }
 
       });
+
+    }, function(err) {
+      reject(err);
     });
 
-  };
+  });
+};
 
-  Game.Promise.search = function(gamerid, details) {
-    return new Promise(function(resolve, reject) {
-      Game.Promise.find().then(function(records) {
+Game.Promise.replaceOrCreate = function(game) {
+  return new Promise(function(resolve, reject) {
+    Game.replaceOrCreate(game, function(err, result) {
+      if (!err) {
 
-        var games = [];
+        resolve(result);
 
-        if (records) {
-
-          // if a gamerid is specified, filter based on that, otherwise
-          // just include all records
-          if (gamerid) {
-            games = findGames(records, gamerid);
-          } else {
-            games = records;
-          }
-
-          console.log("search for gamerid " + gamerid + " : " + JSON.stringify(games) );
-
-          if (details) {
-            // add in season and scoring details for each game
-
-            addActiveSeasons(games, function(games) {
-              // now fluff up the individual picks with more data and scores
-              addScoringForGames(games, function(games) {
-                resolve(games);
-              });
-            });
-
-          } else {
-
-            resolve(games);
-
-          }
-
-        } else {
-          var str = "No game records found for gamer " + gamerid;
-          logger.log(str);
-          reject(str);
-        }
-      }, function(err) {
-        reject(err);
-      });
-
-    });
-  };
-
-  // find the gamer who is currently leading the season totals and
-  // flag them as the leader
-  var highlightLeader = function(seasonTotals) {
-    var leader = null;
-
-    if (seasonTotals) {
-      for (var id in seasonTotals) {
-        if (leader) {
-          // see if this score is better
-          if (seasonTotals[id].total > seasonTotals[leader].total) {
-            leader = id;
-          }
-        } else {
-          leader = id;
-        }
-      }
-
-      seasonTotals[leader].leader = true;
-    }
-
-    return seasonTotals;
-  };
-
-  var picksTotal = function(gamer) {
-    var gamerTotal = 0;
-
-    for (var p = 0; p < gamer.picks.length; p++) {
-      var pick = gamer.picks[p];
-
-      if (pick.score_details && !isNaN(pick.score_details.total)) {
-        gamerTotal += pick.score_details.total;
       } else {
-        console.error("ERROR: could not get total for picks.score_details" + JSON.stringify(pick.score_details));
+        var str = "Error!" + JSON.stringify(err);
+        logger.error(str);
+        reject(str);
       }
-      console.log("gamerTotal = " + gamerTotal);
-    }
-
-    return gamerTotal;
-  };
-
-  var addToSeasonTotals = function(gamer, seasonTotals, gamerTotal) {
-    var gamerid = gamer.id;
-
-    if (!seasonTotals[gamerid]) {
-      console.log("ERROR: no season totals for gamer " + gamerid);
-    } else {
-      console.log("adding to totals " + gamerid + "gamerTotal=" + gamerTotal);
-      seasonTotals[gamerid]["total"] += gamerTotal;
-    }
-
-  };
-
-  var findGamerById = function(id, gamers) {
-    for (var i = 0; i < gamers.length; i++) {
-      var gamer = gamers[i];
-
-      if (gamer && (id == gamer.id)) {
-        return gamer;
-      }
-    }
-
-    return null;
-  };
-
-  var initSeasonTotals = function(gamers) {
-    var seasonTotals = {};
-
-    for (var i = 0; i < gamers.length; i++) {
-      var gamer = gamers[i];
-
-      seasonTotals[gamer.id] = {
-        "total": 0,
-        "name": gamer.name
-      };
-
-    }
-
-    return seasonTotals;
-  };
-
-  var tallyTotalScores = function(record) {
-    // tally individual event scores and season totals
-    var seasonTotals = initSeasonTotals(record.data.gamers);
-
-    var events = record.data.events;
-    for (var e = 0; e < events.length; e++) {
-      var event = events[e];
-
-      var gamers = event.gamers;
-      for (var g = 0; g < gamers.length; g++) {
-        var gamer = gamers[g];
-        var gamerTotal = 0;
-
-        gamerTotal += picksTotal(gamer);
-
-        gamer.total = gamerTotal;
-
-        addToSeasonTotals(gamer, seasonTotals, gamerTotal);
-
-      }
-
-    }
-
-    // add season totals to top level record
-    console.log("seasonTotals : " + JSON.stringify(seasonTotals));
-    highlightLeader(seasonTotals);
-
-    var gamers = [];
-
-    for (var id in seasonTotals) {
-      var gamer = findGamerById(id, record.data.gamers);
-
-      if (gamer) {
-        gamer.name = seasonTotals[id].name;
-        gamer.total = seasonTotals[id].total;
-
-        if (seasonTotals[id].leader) {
-          gamer.leader = true;
-        }
-      } else {
-        console.log("could not find gamer " + id + " in gamers list for this game.");
-      }
-
-    }
-
-    return record;
-  };
-
-  //
-  // go through each tour event in this game and fluff up the
-  // gamer names so we send back a human readable name for each gamer
-  //
-  var addGamerData = function(record) {
-    return new Promise(function(resolve, reject) {
-      var game = record.data;
-      var events = game.events;
-      var gamers = game.gamers;
-      var Gamer = app.models.Gamer.Promise;
-      var requests = [];
-
-      for (var e = 0; e < events.length; e++) {
-        var event = events[e];
-
-        requests.push(Gamer.findGamerNames(event.gamers));
-      }
-
-      requests.push(Gamer.findGamerNames(gamers));
-
-      Promise.all(requests).then(function(gamers) {
-        resolve(record);
-      }, function(err) {
-        reject(err);
-      });
     });
 
-  };
+  });
+};
 
-  Game.Promise.findByIdWithScoring = function(id) {
-    return new Promise(function(resolve, reject) {
+Game.Promise.findSchedule = function(id) {
+  return new Promise(function(resolve, reject) {
 
-      Game.Promise.findById(id).then(function(record) {
-        logger.log("Found game: " + JSON.stringify(record));
+      Game.Promise.findById(id)
+      .then(function(record) {
+          logger.log("Found game: " + JSON.stringify(record));
 
-        addScoring(record).then(function(record) {
-
-          return addGamerData(record);
-
-        }).then(function(record) {
-
-          tallyTotalScores(record);
-
-          resolve(record);
-        }, function(err) {
+          return addTournaments(record); //promise
+        })
+        .then(function(record) {
+          resolve(record.data.schedule);
+        },
+        function(err) {
           reject(err);
         });
 
-      }, function(err) {
-        reject(err);
-      });
-
-    });
-  };
-
-  Game.Promise.replaceOrCreate = function(game) {
-    return new Promise(function(resolve, reject) {
-      Game.replaceOrCreate(game, function(err, result) {
-        if (!err) {
-
-          resolve(result);
-
-        } else {
-          var str = "Error!" + JSON.stringify(err);
-          logger.error(str);
-          reject(str);
-        }
-      });
-
-    });
-  };
+  });
+};
 
 };

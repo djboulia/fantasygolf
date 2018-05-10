@@ -27,7 +27,7 @@
 
                   <td ng-if="active.nextEvent.canSetPicks" class="text-center"><a ng-href="{{picksUrl}}/id/event/{{active.id}}/{{active.nextEvent.id}}">Set Lineup</a>
                   </td>
-                  <td ng-if="active.nextEvent.inProgress" class="text-center">Tournament in progress.
+                  <td ng-if="active.nextEvent.inProgress" class="text-center"><a ng-href="{{tournamentUrl}}/{{active.id}}/{{active.nextEvent.id}}">Tournament</a> in progress.
                   </td>
                   <td ng-if="active.nextEvent.opens" class="text-center">You can set your line up on {{active.nextEvent.opens}}
                   </td>

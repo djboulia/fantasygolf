@@ -1,7 +1,6 @@
 'use strict';
 
 var logger = require('../lib/logger.js');
-var TourSeason = require('../lib/tourseason.js');
 
 module.exports = function(Fantasy) {
 
@@ -84,6 +83,27 @@ module.exports = function(Fantasy) {
       }],
       returns: {
         arg: 'game',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
+    'getSchedule', {
+      http: {
+        path: '/:id/schedule',
+        verb: 'get'
+      },
+      description: 'Get schedule of tour events for this game.',
+
+      accepts: [{
+        arg: 'id',
+        type: 'string',
+        required: true
+      }],
+      returns: {
+        arg: 'schedule',
         type: 'object',
         root: true
       }
@@ -283,6 +303,33 @@ module.exports = function(Fantasy) {
   );
 
   Fantasy.remoteMethod(
+    'getEvent', {
+      http: {
+        path: '/:id/event/:eventid',
+        verb: 'get'
+      },
+      description: 'Get the round details for this event in the game',
+
+      accepts: [{
+          arg: 'id',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'eventid',
+          type: 'string',
+          required: true
+        }
+      ],
+      returns: {
+        arg: 'event',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
     'getPicks', {
       http: {
         path: '/:id/event/:eventid/gamer/:gamerid/picks',
@@ -379,18 +426,6 @@ module.exports = function(Fantasy) {
       });
   };
 
-  //
-  // just get the base of the url as the tournament id
-  //
-  var tournamentId = function(str) {
-    var ndx = str.lastIndexOf("/");
-    if (ndx>0) {
-      return str.substring(ndx+1);
-    } else {
-      return str;
-    }
-  }
-
   /**
    * /tour/:tour/year/:year/schedule
    *
@@ -401,41 +436,18 @@ module.exports = function(Fantasy) {
 
     console.log("getting tour schedule for tour " + tour + " and year " + year);
 
-    var tourSeason = new TourSeason(year, tour);
+    var Game = app.models.Game.Promise;
 
-    tourSeason.getSchedule( (json) => {
-
-      if (json) {
-
-        var records = [];
-
-        var schedule = json.schedule;
-        for (var i=0; i<schedule.length; i++) {
-          var tourEvent = schedule[i];
-
-          // build a list of valid tour events.  only include stroke play format
-          if (tourEvent.format == "stroke") {
-            var record = {};
-
-            record.startDate = tourEvent.startDate;
-            record.endDate = tourEvent.endDate;
-            record.name = tourEvent.tournament;
-            record.id = tournamentId(tourEvent.link.href);
-
-            records.push(record);
-          }
-        }
+    Game.getTourSchedule(tour, year)
+      .then(function(records) {
 
         cb(null, {
           schedule: records
         });
 
-      } else {
-        var err = "json is null";
+      }, function(err) {
         cb(err, null);
-      }
-
-    });
+      });
 
   };
 
@@ -456,6 +468,31 @@ module.exports = function(Fantasy) {
 
         cb(null, {
           game: record
+        });
+
+      }, function(err) {
+        cb(err, null);
+      });
+
+  };
+
+  /**
+   * /:id/schedule
+   *
+   * returns the schedule matching this id
+   *
+   **/
+  Fantasy.getSchedule = function(id, cb) {
+
+    console.log("getting schedule for game " + id);
+
+    var Game = app.models.Game.Promise;
+
+    Game.findSchedule(id)
+      .then(function(record) {
+
+        cb(null, {
+          schedule: record
         });
 
       }, function(err) {
@@ -634,6 +671,31 @@ module.exports = function(Fantasy) {
 
       cb(null, {
         "roster": roster
+      });
+
+    }, function(err) {
+      errCallback(err, cb);
+    });
+
+  };
+
+  /**
+   * /:id/event/:eventid
+   *
+   * returns the round scoring data for this event in the game
+   *
+   **/
+  Fantasy.getEvent = function(id, eventid, cb) {
+
+    console.log("getting event data for game " + id + " and event " + eventid );
+
+    var Game = app.models.Game.Promise;
+
+    Game.getEvent(id, eventid)
+    .then(function(event) {
+
+      cb(null, {
+        "event": event
       });
 
     }, function(err) {

@@ -107,7 +107,7 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
         $scope.name = existingGame.name;
         $scope.existingGame = true;
 
-        return fantasy.getSchedule(obj.tour, obj.season); // promise
+        return fantasy.getTourSchedule(obj.tour, obj.season); // promise
       })
       .then(function(schedule) {
         console.log("loaded full season schedule");
@@ -139,7 +139,7 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
     $scope.season = season;
     $scope.tour = tour;
 
-    fantasy.getSchedule(tour, season)
+    fantasy.getTourSchedule(tour, season)
       .then(function(schedule) {
         console.log("loaded full season schedule");
 

@@ -69,7 +69,7 @@
 
             <h4><div style="padding-left:10px;">Details</div></h4>
             <div ng-repeat="event in events">
-              <h4><div style="padding-left:20px;">{{event.name}}
+              <h4><div style="padding-left:20px;"><a ng-href="{{tournamentUrl}}/{{gameid}}/{{event.id}}">{{event.name}}</a>
               </div></h4>
               <div class="scores" id="tablesection" align="center">
                 <span ng-repeat="gamer in event.gamers">
@@ -95,10 +95,16 @@
                       <tbody id="tablebody">
 
 
-                        <tr ng-repeat="pick in gamer.picks track by $index">
+                        <tr ng-if="gamer.picks" ng-repeat="pick in gamer.picks track by $index">
                           <td class="playerlist-subheader-th">{{pick.name}}</td>
 
                           <td class="playerlist-subheader-th" align="right">{{pick.total}}</td>
+                        </tr>
+
+                        <tr ng-if="!gamer.picks">
+                          <td class="playerlist-subheader-th" align="center">[No Picks for this event]</td>
+
+                          <td class="playerlist-subheader-th" align="right"></td>
                         </tr>
 
                         <tr class="playerlist-total">

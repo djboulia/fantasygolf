@@ -5,6 +5,7 @@ angular.module('CloudApp')
 
 function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
   var gameid = $stateParams.id;
+  var tournamentUrl = "#/eventleaders/id/eventid";
 
   $scope.courseUrl = "coursedetails";
 
@@ -27,6 +28,8 @@ function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
           $scope.gamers = season.gamers;
           $scope.events = season.events;
           $scope.name = season.name;
+          $scope.gameid = gameid;
+          $scope.tournamentUrl = tournamentUrl;
 
           var statusMessage = "";
 
@@ -37,6 +40,7 @@ function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
         },
         function(err) {
           $scope.statusMessage = "Error loading fantasy information!!";
+          $scope.loaded = true;
         });
 
   };

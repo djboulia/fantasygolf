@@ -71,7 +71,8 @@ module.exports = function(Roster) {
             var record = records[i];
 
             if (record.data.game == gameid) {
-              console.log("roster found for game " + gameid + " " + JSON.stringify(record));
+              console.log("roster " + record.id + " found for game " + gameid );
+//              console.log("roster found for game " + gameid + " " + JSON.stringify(record));
               resolve(record);
               return;
             }

@@ -3,7 +3,8 @@ angular.module('CloudApp')
 
 function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fantasy) {
 
-    var leaderboardUrl = "#/leaderboard";
+  var tournamentUrl = "#/eventleaders/id/eventid";
+  var leaderboardUrl = "#/leaderboard";
     var picksUrl = "#/picks";
 
     console.log("reached games controller!");
@@ -40,6 +41,7 @@ function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fant
 
                 $scope.statusMessage = statusMessage;
                 $scope.leaderboardUrl = leaderboardUrl;
+                $scope.tournamentUrl = tournamentUrl;
                 $scope.picksUrl = picksUrl;
                 $scope.gameHistory = seasons.getPriorSeasons();
                 $scope.loaded = true;
