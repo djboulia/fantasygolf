@@ -12,28 +12,15 @@
 
 	<div class="row">
 
-		<div class="col-lg-6">
-			<rd-loading ng-hide="loaded || errorMessage"></rd-loading>
+		<div>
 			<rd-widget ng-show="loaded">
-				<rd-widget-header title="John Choi">
-					<div>Handicap: 5.2</div>
-					<div>Score: 80</div>
+				<rd-widget-header icon="fa-user" title="{{scores.name}} ({{scores.total}})">
+					<div>Round {{roundNumber}}</div>
 				</rd-widget-header>
-			</rd-widget>
-		</div>
-	</div>
-
-	<div class="row">
-
-		<div class="col-lg-6">
-			<rd-widget ng-show="loaded">
-				<rd-widget-header icon="fa-pencil" title="{{scores.name}}">
-					<div><a href="#/course">07/15/2015</a></div>
-				</rd-widget-header>
-				<rd-widget-body classes="small no-padding">
+				<rd-widget-body classes="no-padding">
 					<div class="table-responsive">
 						<table class="table">
-							<thead>
+							<tbody>
 								<tr class="scorecard hole">
 									<th>Hole</th>
 									<th>1</th>
@@ -46,51 +33,37 @@
 									<th>8</th>
 									<th>9</th>
 									<th>OUT</th>
-									<th>TOTAL</th>
+									<th></th>
 								</tr>
-							</thead>
-							<tbody>
 								<tr class="scorecard par">
 									<td>Par</td>
-									<td>4</td>
-									<td>5</td>
-									<td>3</td>
-									<td>4</td>
-									<td>4</td>
-									<td>5</td>
-									<td>3</td>
-									<td>4</td>
-									<td>4</td>
-									<td>36</td>
+									<td>{{round.par_values[0]}}</td>
+									<td>{{round.par_values[1]}}</td>
+									<td>{{round.par_values[2]}}</td>
+									<td>{{round.par_values[3]}}</td>
+									<td>{{round.par_values[4]}}</td>
+									<td>{{round.par_values[5]}}</td>
+									<td>{{round.par_values[6]}}</td>
+									<td>{{round.par_values[7]}}</td>
+									<td>{{round.par_values[8]}}</td>
+									<td>{{totals.front}}</td>
 									<td></td>
 								</tr>
 
 								<tr class="scorecard handicap">
 									<td>Score</td>
-									<td>9</td>
-									<td>11</td>
-									<td>13</td>
-									<td>1</td>
-									<td>9</td>
-									<td>11</td>
-									<td>13</td>
-									<td>1</td>
-									<td>1</td>
-									<td></td>
+									<td>{{round.round_values[0]}}</td>
+									<td>{{round.round_values[1]}}</td>
+									<td>{{round.round_values[2]}}</td>
+									<td>{{round.round_values[3]}}</td>
+									<td>{{round.round_values[4]}}</td>
+									<td>{{round.round_values[5]}}</td>
+									<td>{{round.round_values[6]}}</td>
+									<td>{{round.round_values[7]}}</td>
+									<td>{{round.round_values[8]}}</td>
+									<td>{{playerTotals.front}}</td>
 									<td></td>
 								</tr>
-							</tbody>
-						</table>
-					</div>
-				</rd-widget-body>
-			</rd-widget>
-
-			<rd-widget ng-show="loaded">
-
-				<rd-widget-body classes="small no-padding">
-					<div class="table-responsive">
-						<table class="table scorecard">
-							<thead>
 								<tr class="scorecard hole">
 									<th>Hole</th>
 									<th>10</th>
@@ -105,42 +78,156 @@
 									<th>IN</th>
 									<th>TOTAL</th>
 								</tr>
-							</thead>
-							<tbody>
 								<tr class="scorecard par">
 									<td>Par</td>
-									<td>4</td>
-									<td>5</td>
-									<td>3</td>
-									<td>4</td>
-									<td>4</td>
-									<td>5</td>
-									<td>3</td>
-									<td>4</td>
-									<td>4</td>
-									<td>36</td>
-									<td>72</td>
+									<td>{{round.par_values[9]}}</td>
+									<td>{{round.par_values[10]}}</td>
+									<td>{{round.par_values[11]}}</td>
+									<td>{{round.par_values[12]}}</td>
+									<td>{{round.par_values[13]}}</td>
+									<td>{{round.par_values[14]}}</td>
+									<td>{{round.par_values[15]}}</td>
+									<td>{{round.par_values[16]}}</td>
+									<td>{{round.par_values[17]}}</td>
+									<td>{{totals.back}}</td>
+									<td>{{totals.total}}</td>
 								</tr>
 
 								<tr class="scorecard handicap">
 									<td>Score</td>
-									<td>9</td>
-									<td>11</td>
-									<td>13</td>
-									<td>1</td>
-									<td>9</td>
-									<td>11</td>
-									<td>13</td>
-									<td>1</td>
-									<td>1</td>
-									<td></td>
-									<td></td>
+									<td>{{round.round_values[9]}}</td>
+									<td>{{round.round_values[10]}}</td>
+									<td>{{round.round_values[11]}}</td>
+									<td>{{round.round_values[12]}}</td>
+									<td>{{round.round_values[13]}}</td>
+									<td>{{round.round_values[14]}}</td>
+									<td>{{round.round_values[15]}}</td>
+									<td>{{round.round_values[16]}}</td>
+									<td>{{round.round_values[17]}}</td>
+									<td>{{playerTotals.back}}</td>
+									<td>{{playerTotals.total}}</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 				</rd-widget-body>
 			</rd-widget>
+
+		</div>
+	</div>
+
+
+	<div class="row">
+
+		<div>
+			<rd-widget ng-show="loaded">
+				<rd-widget-header icon="fa-pencil" title="Fantasy Scoring">
+				</rd-widget-header>
+				<rd-widget-body classes="no-padding">
+					<div class="table-responsive">
+						<table class="table">
+							<tbody>
+								<tr class="scorecard hole">
+									<th colspan="2">Position Scoring</th>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Current Position</td>
+									<td>{{scores.score_details.positionStats.pos}}</td>
+								</tr>
+
+								<tr class="scorecard par">
+									<td>Position Points</td>
+									<td>{{scores.score_details.positionStats.score}}</td>
+								</tr>
+
+								<tr>
+									<td></td>
+									<td></td>
+								</tr>
+
+								<tr class="scorecard hole">
+									<th colspan="2">Hole Scoring</th>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Double Eagles or Better</td>
+									<td>{{scores.score_details.holeStats.dblEaglePlus}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Eagles</td>
+									<td>{{scores.score_details.holeStats.eagle}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Birdies</td>
+									<td>{{scores.score_details.holeStats.birdie}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Pars</td>
+									<td>{{scores.score_details.holeStats.par}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Bogies</td>
+									<td>{{scores.score_details.holeStats.bogie}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Double Bogies</td>
+									<td>{{scores.score_details.holeStats.dblBogie}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Others</td>
+									<td>{{scores.score_details.holeStats.other}}</td>
+								</tr>
+
+								<tr class="scorecard par">
+									<td>Hole Points</td>
+									<td>{{scores.score_details.holeStats.score}}</td>
+								</tr>
+
+								<tr>
+									<td></td>
+									<td></td>
+								</tr>
+
+								<tr class="scorecard hole">
+									<th colspan="2">Streak Scoring</th>
+								</tr>
+
+								<tr class="scorecard handicap">
+									<td>Birdie Streaks</td>
+									<td>{{scores.score_details.streakStats.birdieStreaks}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Bogey Free Rounds</td>
+									<td>{{scores.score_details.streakStats.bogieFreeRounds}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>All Rounds Under 70</td>
+									<td>{{(scores.score_details.streakStats.allRoundsSub70) ? "Yes" : "No"}}</td>
+								</tr>
+								<tr class="scorecard handicap">
+									<td>Hole in Ones</td>
+									<td>{{scores.score_details.streakStats.holeInOnes}}</td>
+								</tr>
+
+								<tr class="scorecard par">
+									<td>Streak Points</td>
+									<td>{{scores.score_details.streakStats.score}}</td>
+								</tr>
+
+								<tr class="scorecard handicap">
+									<td>Major Multiplier</td>
+									<td>{{(scores.score_details.multiplier==1) ? "No" : "Yes (" + scores.score_details.multiplier + "x)" }}</td>
+								</tr>
+								<tr class="scorecard par">
+									<td>Total Points</td>
+									<td>{{scores.score_details.total}}</td>
+								</tr>
+
+							</tbody>
+						</table>
+										</div>
+				</rd-widget-body>
+			</rd-widget>
+
 		</div>
 	</div>
 </div>

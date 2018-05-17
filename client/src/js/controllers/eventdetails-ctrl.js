@@ -1,12 +1,15 @@
 angular.module('CloudApp')
-  .controller('LeaderboardCtrl', ['$scope', '$stateParams', '$location', 'cdFantasy', LeaderboardCtrl
-  ]);
+  .controller('EventDetailsCtrl', ['$scope', '$stateParams', '$location', 'cdFantasy', EventDetailsCtrl]);
 
 
-function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
+function EventDetailsCtrl($scope, $stateParams, $location, fantasy) {
   var gameid = $stateParams.id;
+  var eventid = $stateParams.eventid;
   var tournamentUrl = "#/eventleaders/id/eventid";
-  var eventDetailsUrl = "#/leaderboard/id/eventid";
+  var leaderboardUrl = "#/leaderboard/id";
+  var golferUrl = "#/golfer/id/eventid/golferid";
+
+  console.log("reached eventdetails controller with id " + gameid + " and event " + eventid);
 
   $scope.courseUrl = "coursedetails";
 
@@ -26,12 +29,22 @@ function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
       .then(function(season) {
 
           console.log("season: " + season.id);
+
+          for (var i = 0; i < season.events.length; i++) {
+            var event = season.events[i];
+
+            if (event.id == eventid) {
+              $scope.event = event;
+              break;
+            }
+          }
+
           $scope.gamers = season.gamers;
-          $scope.events = season.events;
           $scope.name = season.name;
           $scope.gameid = gameid;
           $scope.tournamentUrl = tournamentUrl;
-          $scope.eventDetailsUrl = eventDetailsUrl;
+          $scope.leaderboardUrl = leaderboardUrl;
+          $scope.golferUrl = golferUrl;
 
           var statusMessage = "";
 

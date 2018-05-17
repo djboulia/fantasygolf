@@ -111,7 +111,10 @@ module.exports = function(Game) {
     });
   };
 
-  var findEventById = function(id, schedule) {
+  //
+  // use this to find an event in a schedule object
+  //
+  var findScheduleEventById = function(id, schedule) {
     for (var i = 0; i < schedule.length; i++) {
       var event = schedule[i];
 
@@ -121,6 +124,23 @@ module.exports = function(Game) {
     }
 
     console.log("didn't find id " + id + " in schedule " + JSON.stringify(schedule));
+
+    return null;
+  };
+
+  //
+  // use this to find an event in a game events object
+  //
+  var findGameEventById = function(id, events) {
+    for (var i = 0; i < events.length; i++) {
+      var event = events[i];
+
+      if (event && (id == event.id)) {
+        return event;
+      }
+    }
+
+    console.log("didn't find id " + id + " in events " + JSON.stringify(events));
 
     return null;
   };
@@ -138,7 +158,7 @@ module.exports = function(Game) {
           for (var i = 0; i < game.data.events.length; i++) {
             var event = game.data.events[i];
 
-            if (findEventById(event.id, schedule)) {
+            if (findScheduleEventById(event.id, schedule)) {
               events.push(event);
             } else {
               console.log("would have removed event " + JSON.stringify(event));
@@ -484,7 +504,7 @@ module.exports = function(Game) {
           for (var i = 0; i < schedule.length; i++) {
             var event = schedule[i];
 
-            var tourEvent = findEventById(event.id, records);
+            var tourEvent = findScheduleEventById(event.id, records);
 
             if (tourEvent) {
               event.name = tourEvent.name;
@@ -835,6 +855,27 @@ module.exports = function(Game) {
     });
   };
 
+  var getNextEvent = function(gameid) {
+    return new Promise(function(resolve, reject) {
+      Game.Promise.findByIdWithScoring(gameid)
+        .then(function(record) {
+          return addActiveSeason(record); // promise
+        })
+        .then(function(record) {
+            var game = record.data;
+
+            logger.log("Found game: " + JSON.stringify(game));
+
+            var nextEvent = findNextEvent(record);
+            resolve(nextEvent);
+
+          },
+          function(err) {
+            reject(err);
+          });
+    });
+  };
+
   //
   // an update to the roster could affect picks for games that are upcoming
   // but haven't yet started.  if we find that case, then handle it by
@@ -843,24 +884,29 @@ module.exports = function(Game) {
   //
   Game.Promise.resolveRosterUpdate = function(gameid, roster) {
     return new Promise(function(resolve, reject) {
-      Game.Promise.findByIdWithScoring(gameid)
-        .then(function(record) {
-            return addActiveSeason(record); // promise
-          })
+      var nextEvent = null;
+
+      getNextEvent(gameid)
+        .then(function(result) {
+          nextEvent = result;
+
+          return Game.Promise.findById(gameid); // promise
+        })
         .then(function(record) {
             var Roster = app.models.Roster.Promise;
             var game = record.data;
 
             logger.log("Found game: " + JSON.stringify(game));
 
-            var nextEvent = findNextEvent(record);
-
-            if (nextEvent && nextEvent.canSetPicks) {
+            //            if (nextEvent && nextEvent.canSetPicks) {
+            if (nextEvent) {
               console.log("next event found: " + nextEvent.name);
 
               // look for this event id in the game's events
 
-              var event = findEventById(nextEvent.id, game.events);
+              var changed = false;
+
+              var event = findGameEventById(nextEvent.id, game.events);
 
               if (event && event.gamers) {
                 console.log("next event found: " + event.id);
@@ -886,11 +932,13 @@ module.exports = function(Game) {
                     if (!rosterEntry) {
                       // this shouldn't happen...
                       console.log("WARNING: didn't find pick " + pick.id + " in roster... removing.");
+                      changed = true;
                     } else if (rosterEntry && rosterEntry.gamer == gamer.id) {
                       // still owned by this player, we're good
                       newPicks.push(pick);
                     } else {
                       console.log("found a pick " + pick.id + " no longer owned by this gamer, removing " + JSON.stringify(rosterEntry));
+                      changed = true;
                     }
                   }
 
@@ -900,10 +948,32 @@ module.exports = function(Game) {
                 }
               }
 
-              // TODO: update the game record here...
-              console.log("TODO: update game record");
+              if (changed) {
+                // TODO: update the game record here...
+                console.log("made changes, updating game record");
+                console.log("game record " + JSON.stringify(record));
 
-              resolve(record);
+                Game.replaceOrCreate(record, function(err, record) {
+                  if (!err && record) {
+
+                    logger.log("updated game " + gameid);
+                    resolve(record);
+
+                  } else {
+                    if (!record) {
+                      var str = "Could not find game!";
+                      reject(str);
+                    } else {
+                      var str = "Error!" + JSON.stringify(err);
+                      reject(str);
+                    }
+                  }
+                });
+
+              } else {
+                console.log("no game record changes required");
+                resolve(record);
+              }
             } else {
               resolve(record);
             }

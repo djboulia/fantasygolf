@@ -4,6 +4,7 @@ angular.module('CloudApp')
 function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fantasy) {
 
   var tournamentUrl = "#/eventleaders/id/eventid";
+  var gameDetailsUrl = "#/gamedetails/id";
   var leaderboardUrl = "#/leaderboard";
   var freeAgentsUrl = "#/roster/id/available";
 
@@ -43,6 +44,7 @@ function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fant
 
                 $scope.statusMessage = statusMessage;
                 $scope.leaderboardUrl = leaderboardUrl;
+                $scope.gameDetailsUrl = gameDetailsUrl;
                 $scope.tournamentUrl = tournamentUrl;
                 $scope.freeAgentsUrl = freeAgentsUrl;
                 $scope.picksUrl = picksUrl;

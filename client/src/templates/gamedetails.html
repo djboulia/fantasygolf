@@ -1,0 +1,52 @@
+<div ng-controller="GameDetailsCtrl">
+  <div class="row">
+
+    <div class="col-lg-6">
+      <rd-loading ng-hide="loaded"></rd-loading>
+      <rd-widget ng-show="loaded">
+        <rd-widget-header icon="fa-trophy" title="{{username}}">
+        </rd-widget-header>
+        <rd-widget-body classes="small no-padding">
+          <div ng-if="activeSeason" class="table-responsive">
+            <h4 style="text-align:center">{{activeSeason.name}}</h4>
+            <div style="text-align:center"><a ng-href="{{leaderboardUrl}}/id/{{activeSeason.id}}">Season Leaderboard</a>
+          </div>
+            <table class="table">
+              <tbody id="nextevent">
+
+                <tr ng-if="activeSeason.nextEvent">
+                  <th class="text-left">Next Tournament
+                  </th>
+                  <th>
+                  </th>
+                </tr>
+
+                <tr ng-if="activeSeason.nextEvent">
+
+                  <td class="text-left">{{activeSeason.nextEvent.name}}
+                  </td>
+
+                  <td ng-if="activeSeason.nextEvent.canSetPicks" class="text-center"><a ng-href="{{picksUrl}}/id/event/{{activeSeason.id}}/{{activeSeason.nextEvent.id}}">Set Lineup</a>
+                  </td>
+                  <td ng-if="activeSeason.nextEvent.inProgress" class="text-center"><a ng-href="{{eventDetailsUrl}}/{{activeSeason.id}}/{{activeSeason.nextEvent.id}}">In progress</a>
+                  </td>
+                  <td ng-if="activeSeason.nextEvent.opens" class="text-center">Lineup opens {{activeSeason.nextEvent.opens}}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="text-center" colspan="2">
+                    <div class="status" ng-bind-html="statusMessage"></div>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </rd-widget-body>
+        <rd-widget>
+    </div>
+  </div>
+
+
+</div>

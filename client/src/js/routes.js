@@ -37,6 +37,12 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'Game',
                 crumbs: 'Home / Games / Game'
             })
+            .state('gamedetails/id', {
+                url: '/gamedetails/id/:id',
+                templateUrl: 'templates/gamedetails.html',
+                label: 'Game Details',
+                crumbs: 'Home / Games / Game Details'
+            })
             .state('gameplayers', {
                 url: '/gameplayers/id/:id',
                 templateUrl: 'templates/gameplayers.html',
@@ -60,6 +66,12 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 templateUrl: 'templates/leaderboard.html',
                 label: 'Leaderboard',
                 crumbs: 'Home / Games / Leaderboard'
+            })
+            .state('leaderboard/id/eventid', {
+                url: '/leaderboard/id/eventid/:id/:eventid',
+                templateUrl: 'templates/eventdetails.html',
+                label: 'Event Details',
+                crumbs: 'Home / Games / Event Details'
             })
             .state('eventleaders/id/eventid', {
                 url: '/eventleaders/id/eventid/:id/:eventid',
@@ -114,12 +126,6 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 templateUrl: 'templates/profile.html',
                 label: 'Profile',
                 crumbs: 'Home / Profile'
-            })
-            .state('events', {
-                url: '/events',
-                templateUrl: 'templates/events.html',
-                label: 'Golf Tournament',
-                crumbs: 'Home / Golf Tournament'
             })
             .state('scores', {
                 url: '/scores',
