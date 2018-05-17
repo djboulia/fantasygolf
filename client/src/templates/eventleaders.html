@@ -35,7 +35,7 @@
                                     <td>{{golfer.name}}</td>
                                     <td  class="text-center" style="border: 1px solid #cccccc;">{{golfer.total}}</td>
                                     <td ng-repeat="roundNumber in roundNumbers" class="text-center" style="border: 1px solid #cccccc;">
-                                        <div ng-class="{'golf-round-leader': lowRounds[roundNumber] == golfer[roundNumber]}">{{golfer[roundNumber]}}</div>
+                                        <div ng-class="{'golf-round-leader': lowRounds[$index] == golfer[roundNumber]}">{{golfer[roundNumber]}}</div>
                                     </td>
                                 </tr>
                                 <tr>

@@ -1,4 +1,5 @@
 var ScoreCard = require('../lib/scorecard.js');
+var logger = require('../lib/logger.js');
 
 //
 // pos is a string either with the golfer's place in the tournament (1,2,3) or their
@@ -68,7 +69,7 @@ var getRoundStatus = function(golfers, numberOfRounds) {
       round = round.toString();
 
       if (ScoreCard.isValidScore(golfer[round])) {
-        console.debug("found valid score for round " + round + ", golfer " +
+        logger.debug("found valid score for round " + round + ", golfer " +
           JSON.stringify(golfer));
 
         statusData[i] = ROUND_STARTED;
@@ -76,10 +77,10 @@ var getRoundStatus = function(golfers, numberOfRounds) {
       } else {
         // no valid score, but see if there is an in progress round
         var thru = golfer['thru'];
-        console.debug("golfer " + golfer['name'] + " thru: " + thru);
+        logger.debug("golfer " + golfer['name'] + " thru: " + thru);
 
         if (ScoreCard.isNumber(thru) && thru < 18) {
-          console.debug("found in progress score for round " + round + ", golfer " +
+          logger.debug("found in progress score for round " + round + ", golfer " +
             JSON.stringify(golfer) + " thru " + thru);
 
           statusData[i] = ROUND_STARTED;
@@ -143,7 +144,7 @@ var singleRoundLeaders = function(golfers, courseInfo, roundNumber, roundStatus)
   var par = courseInfo[roundNumber].par;
   var lowScore = lowRoundNetTotal(golfers, par, roundNumber, roundStatus);
 
-  console.log("round " + roundNumber + " low score " + lowScore);
+  logger.debug("round " + roundNumber + " low score " + lowScore);
 
   // build a list of the leaders
   for (var i = 0; i < golfers.length; i++) {
@@ -156,7 +157,7 @@ var singleRoundLeaders = function(golfers, courseInfo, roundNumber, roundStatus)
         score: netScore
       });
 
-      console.debug("adding " + golfer.name + " for round " + roundNumber + " with score: " + netScore);
+      logger.debug("adding " + golfer.name + " for round " + roundNumber + " with score: " + netScore);
     }
   }
 
@@ -176,12 +177,12 @@ var roundLeaders = function(golfers, courseInfo) {
   var roundStatus = getRoundStatus(golfers, numberOfRounds);
   var leaders = [];
 
-  console.debug("Rounds started: " + JSON.stringify(roundStatus));
+  logger.debug("Rounds started: " + JSON.stringify(roundStatus));
 
   for (var i = 0; i < roundStatus.length; i++) {
     if (roundStatus[i]) {
       // for the rounds that have started, go get the leaders
-      console.log("getting single round leaders for round " + i);
+      logger.debug("getting single round leaders for round " + i);
       leaders.push(singleRoundLeaders(golfers, courseInfo, i, roundStatus));
     } else {
       // round not started, just put an empty array of leaders
@@ -209,7 +210,7 @@ var getLastRoundPlayed = function(roundStatus) {
 
 // format tournament info for ease of display
 exports.format = function(record) {
-  console.log(JSON.stringify(record));
+  logger.debug(JSON.stringify(record));
 
   var NUMBER_OF_ROUNDS = 4;
 
@@ -225,8 +226,8 @@ exports.format = function(record) {
   var lowRounds = [];
 
   for (var i = 0; i < NUMBER_OF_ROUNDS; i++) {
-    roundNumbers.push(String(i + 1));
-    lowRounds[String(i + 1)] = "-";
+    roundNumbers.push(i+1);
+    lowRounds[i] = "-";
   }
 
   var roundStatus = getRoundStatus(golfers, NUMBER_OF_ROUNDS);
@@ -241,7 +242,7 @@ exports.format = function(record) {
       var roundNumber = new String(i + 1);
 
       if (i == currentRound) {
-        lowRounds[roundNumber] = (leaders[i][0]) ? leaders[i][0].score : '-';
+        lowRounds[i] = (leaders[i][0]) ? leaders[i][0].score : '-';
 
         // loop through the current day scores and convert to net par
         // this makes in progress rounds format more nicely
@@ -270,7 +271,7 @@ exports.format = function(record) {
         });
 
         // first element is low score
-        lowRounds[roundNumber] = golfers[0][roundNumber];
+        lowRounds[i] = golfers[0][roundNumber];
       }
 
     }
@@ -281,7 +282,7 @@ exports.format = function(record) {
 
 
 
-    console.debug("Golfers: " + JSON.stringify(golfers));
+//    console.log("Golfers: " + JSON.stringify(golfers));
 
     // sort by position
     golfers.sort(function(a, b) {
@@ -294,10 +295,26 @@ exports.format = function(record) {
   var result = {};
 
   result.name = event.name;
-  result.courseInfo = courseInfo;
   result.scores = golfers;
-  result.roundNumbers = roundNumbers;
+  result.roundNumbers = [1, 2, 3, 4];
   result.lowRounds = lowRounds;
 
   return result;
+};
+
+exports.formatGolferScore = function(golferid, record) {
+    var golfer = null;
+    var scores = record.scores;
+
+    for (var i=0; i<scores.length; i++) {
+      var score = scores[i];
+
+      if (score.id == golferid) {
+        // format the scoring information here
+
+        golfer = score;
+      }
+    }
+
+    return golfer;
 };

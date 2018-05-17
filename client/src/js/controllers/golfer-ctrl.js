@@ -1,9 +1,11 @@
 angular.module('CloudApp')
-    .controller('EventLeadersCtrl', ['$scope', '$stateParams', '$location',
-                                      'cdFantasy', EventLeadersCtrl]);
+    .controller('GolferCtrl', ['$scope', '$stateParams', '$location',
+                                      'cdFantasy', GolferCtrl]);
 
 
-function EventLeadersCtrl($scope, $stateParams, $location, fantasy) {
+function GolferCtrl($scope, $stateParams, $location, fantasy) {
+
+    console.log("in GolferCtrl");
 
     $scope.loadItems = function () {
 
@@ -23,28 +25,25 @@ function EventLeadersCtrl($scope, $stateParams, $location, fantasy) {
             // the EVENT holds the golfers
             // the GAME is the game played based on the golfer's scores
 
-            fantasy.getEvent(gameid, eventid)
-                .then(function (event) {
-                        $scope.name = event.name;
-                        $scope.golfers = event.scores;
-                        $scope.roundNumbers = event.roundNumbers;
-                        $scope.lowRounds = event.lowRounds;
-                        $scope.eventOverviewUrl = "#/eventdetails/id/" + eventid;
+            fantasy.getGolfer(gameid, eventid, golferid)
+                .then(function (scores) {
+                        $scope.scores = scores;
 
                         $scope.loaded = true;
                     },
                     function (err) {
                         // The object was not retrieved successfully.
-                        console.error("Couldn't access event information!");
+                        console.error("Couldn't access golfer information!");
 
                         $scope.$apply(function () {
-                            $scope.errorMessage = "Couldn't access event information!";
+                            $scope.errorMessage = "Couldn't access golfer information!";
                         });
                     });
         }
 
         var gameid = $stateParams.id;
         var eventid = $stateParams.eventid;
+        var golferid = $stateParams.golferid;
 
         if (eventid) {
             eventLoadedHandler(gameid, eventid);
@@ -56,7 +55,7 @@ function EventLeadersCtrl($scope, $stateParams, $location, fantasy) {
     }
 
     $scope.onRefresh = function () {
-        console.log("Refreshing event leaders");
+        console.log("Refreshing golfer");
 
         // Go back to the Cloud and load a new set of Objects
         // as a hard refresh has been done

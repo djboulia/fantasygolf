@@ -5,6 +5,8 @@ function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fant
 
   var tournamentUrl = "#/eventleaders/id/eventid";
   var leaderboardUrl = "#/leaderboard";
+  var freeAgentsUrl = "#/roster/id/available";
+
     var picksUrl = "#/picks";
 
     console.log("reached games controller!");
@@ -42,6 +44,7 @@ function GamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fant
                 $scope.statusMessage = statusMessage;
                 $scope.leaderboardUrl = leaderboardUrl;
                 $scope.tournamentUrl = tournamentUrl;
+                $scope.freeAgentsUrl = freeAgentsUrl;
                 $scope.picksUrl = picksUrl;
                 $scope.gameHistory = seasons.getPriorSeasons();
                 $scope.loaded = true;

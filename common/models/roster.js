@@ -71,8 +71,8 @@ module.exports = function(Roster) {
             var record = records[i];
 
             if (record.data.game == gameid) {
-              console.log("roster " + record.id + " found for game " + gameid );
-//              console.log("roster found for game " + gameid + " " + JSON.stringify(record));
+              console.log("roster " + record.id + " found for game " + gameid);
+              //              console.log("roster found for game " + gameid + " " + JSON.stringify(record));
               resolve(record);
               return;
             }
@@ -250,11 +250,13 @@ module.exports = function(Roster) {
     });
   };
 
-  var findPlayer = function(player, rosterData) {
+  Roster.Promise.findPlayer = function(id, roster) {
+    var rosterData = roster.data.roster;
+
     for (var i = 0; i < rosterData.length; i++) {
       var currentPlayer = rosterData[i];
 
-      if (currentPlayer.player_id == player.player_id) {
+      if (currentPlayer.player_id == id) {
         return currentPlayer;
       }
     }
@@ -269,7 +271,7 @@ module.exports = function(Roster) {
     for (var p = 0; p < players.length; p++) {
       var player = players[p];
 
-      var currentPlayer = findPlayer(player, rosterData);
+      var currentPlayer = Roster.Promise.findPlayer(player.player_id, roster);
 
       if (currentPlayer) {
         // existing player, copy new info to record
@@ -287,6 +289,7 @@ module.exports = function(Roster) {
   }
 
   Roster.Promise.update = function(gameid, players) {
+
     return new Promise(function(resolve, reject) {
       // look up this game's roster, then insert or update the player records
 
@@ -301,7 +304,18 @@ module.exports = function(Roster) {
             if (!err && record) {
 
               logger.log("updated roster for game " + gameid);
-              resolve(record);
+
+              // we just updated the roster, which could make any current picks invalid
+              // check that and fix up if necessary
+
+              var Game = app.models.Game.Promise;
+
+              Game.resolveRosterUpdate(gameid, roster)
+                .then(function(game) {
+                  resolve(record);
+                }, function(err) {
+                  reject(err);
+                });
 
             } else {
               if (!record) {
@@ -351,4 +365,92 @@ module.exports = function(Roster) {
     });
   };
 
+  var findFreeAgents = function(roster) {
+    var freeAgents = [];
+
+    for (var i = 0; i < roster.length; i++) {
+      var entry = roster[i];
+
+      if (!entry.gamer) {
+        // no gamer id, must be a free agent
+        freeAgents.push(entry);
+      }
+    }
+
+    return freeAgents;
+  };
+
+  //
+  // get the roster for this game and highlight players participating
+  // in the given event.  With this we can easily identify players
+  // (owned or free agents) that are participating in a particular tour event
+  //
+  Roster.Promise.findByGameAndEventId = function(gameid, eventid) {
+    console.log("in Roster.Promise.findByGameAndEventId");
+
+    return new Promise(function(resolve, reject) {
+
+      findGameAndRoster(gameid).then(function(obj) {
+          var game = obj.game;
+          var roster = obj.roster;
+
+          var gamers = game.data.gamers;
+
+          var Gamer = app.models.Gamer.Promise;
+
+          Gamer.findGamerNames(gamers)
+            .then(function(obj) {
+                roster.data.gamers = game.data.gamers;
+
+                var tourSeason = new TourSeason(game.data.season, game.data.tour);
+
+                tourSeason.getEvent(eventid, function(event) {
+
+                  if (event) {
+                    console.log("got event " + JSON.stringify(event.name));
+                    roster.data.event = {
+                      id: eventid,
+                      name: event.name
+                    };
+
+                    // go through the player list and look for players who are
+                    // currently in our roster
+                    var rosterData = roster.data.roster;
+
+                    for (var i = 0; i < event.scores.length; i++) {
+                      var player = event.scores[i];
+
+                      var foundPlayer = Roster.Promise.findPlayer(player.id, roster);
+
+                      if (foundPlayer) {
+                        foundPlayer.inEvent = true;
+                      } else {
+                        // in event, but not found in our roster...
+                        // add the player as a free agent
+                        console.log("player not found.  adding " + player.name + " to returned roster");
+
+                        var newPlayer = RosterEntry.undrafted(player.id, player.name);
+                        newPlayer.inEvent = true;
+
+                        rosterData.push(newPlayer);
+                      }
+                    }
+
+                    resolve(roster);
+                  } else {
+                    reject("Could not get event " + eventid);
+                  }
+                });
+              },
+              function(err) {
+                reject(err);
+              });
+
+        },
+        function(err) {
+          reject(err);
+        });
+
+    });
+  };
 };

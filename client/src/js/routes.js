@@ -67,11 +67,29 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'Tournament Scores',
                 crumbs: 'Home / Golf Tournaments / Tournament Scores'
             })
+            .state('golfer/id/eventid/golferid', {
+                url: '/golfer/id/eventid/golferid/:id/:eventid/:golferid',
+                templateUrl: 'templates/golfer.html',
+                label: 'Scores',
+                crumbs: 'Home / Golf Tournaments / Golfer'
+            })
+            .state('rosterevent/id/eventid', {
+                url: '/rosterevent/id/eventid/:id/:eventid',
+                templateUrl: 'templates/rosterevent.html',
+                label: 'Event Roster',
+                crumbs: 'Home / Games / Event Roster'
+            })
             .state('roster/id', {
                 url: '/roster/id/:id',
                 templateUrl: 'templates/roster.html',
                 label: 'Roster',
                 crumbs: 'Home / Games / Roster'
+            })
+            .state('roster/id/available', {
+                url: '/roster/id/available/:id',
+                templateUrl: 'templates/rosterfa.html',
+                label: 'Free Agents',
+                crumbs: 'Home / Games / Free Agents'
             })
             .state('rosteredit/id', {
                 url: '/rosteredit/id/player/:id',

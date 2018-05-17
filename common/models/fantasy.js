@@ -119,25 +119,25 @@ module.exports = function(Fantasy) {
       description: 'Update game data',
 
       accepts: [{
-        arg: 'id',
-        type: 'string',
-        required: true
-      },
-      {
-        arg: 'name',
-        type: 'string',
-        required: true
-      },
-      {
-        arg: 'schedule',
-        type: 'array',
-        required: true
-      },
-      {
-        arg: 'gamers',
-        type: 'array',
-        required: true
-      }
+          arg: 'id',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'name',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'schedule',
+          type: 'array',
+          required: true
+        },
+        {
+          arg: 'gamers',
+          type: 'array',
+          required: true
+        }
       ],
       returns: {
         arg: 'game',
@@ -228,6 +228,33 @@ module.exports = function(Fantasy) {
   );
 
   Fantasy.remoteMethod(
+    'getEventRoster', {
+      http: {
+        path: '/:id/event/:eventid/roster',
+        verb: 'get'
+      },
+      description: 'Get roster and highlight players in this event',
+
+      accepts: [{
+          arg: 'id',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'eventid',
+          type: 'string',
+          required: true
+        }
+      ],
+      returns: {
+        arg: 'roster',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
     'initRoster', {
       http: {
         path: '/:id/roster/init',
@@ -289,6 +316,11 @@ module.exports = function(Fantasy) {
           required: true
         },
         {
+          arg: 'eventid',
+          type: 'string',
+          required: true
+        },
+        {
           arg: 'gamerid',
           type: 'string',
           required: true
@@ -323,6 +355,38 @@ module.exports = function(Fantasy) {
       ],
       returns: {
         arg: 'event',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
+    'getGolfer', {
+      http: {
+        path: '/:id/event/:eventid/golfer/:golferid',
+        verb: 'get'
+      },
+      description: 'Get the scoring details for this golfer',
+
+      accepts: [{
+          arg: 'id',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'eventid',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'golferid',
+          type: 'string',
+          required: true
+        }
+      ],
+      returns: {
+        arg: 'scores',
         type: 'object',
         root: true
       }
@@ -601,6 +665,34 @@ module.exports = function(Fantasy) {
 
   };
 
+  /**
+   * /:id/event/:eventid
+   *
+   * id is the game to get this roster for
+   * eventid is the tournament event to apply to this roster
+   *
+   * returns a roster highlighting the players participating in the given event
+   *
+   **/
+  Fantasy.getEventRoster = function(id, eventid, cb) {
+
+    var Roster = app.models.Roster.Promise;
+
+    console.log("getting roster for game " + id + " and event " + eventid);
+
+    Roster.findByGameAndEventId(id, eventid)
+      .then(function(roster) {
+
+        cb(null, {
+          "roster": roster
+        });
+
+      }, function(err) {
+        errCallback(err, cb);
+      });
+
+  };
+
   var errCallback = function(str, cb) {
     logger.error(str);
 
@@ -661,13 +753,13 @@ module.exports = function(Fantasy) {
    * returns the roster for this gamer
    *
    **/
-  Fantasy.getRosterGamer = function(id, gamerid, cb) {
+  Fantasy.getRosterGamer = function(id, eventid, gamerid, cb) {
 
-    console.log("getting roster for game " + id + " and gamer " + gamerid);
+    console.log("getting roster for game " + id + " event " + eventid + " and gamer " + gamerid);
 
     var Gamer = app.models.Gamer.Promise;
 
-    Gamer.getRoster(id, gamerid).then(function(roster) {
+    Gamer.getRoster(id, eventid, gamerid).then(function(roster) {
 
       cb(null, {
         "roster": roster
@@ -687,20 +779,45 @@ module.exports = function(Fantasy) {
    **/
   Fantasy.getEvent = function(id, eventid, cb) {
 
-    console.log("getting event data for game " + id + " and event " + eventid );
+    console.log("getting event data for game " + id + " and event " + eventid);
 
     var Game = app.models.Game.Promise;
 
     Game.getEvent(id, eventid)
-    .then(function(event) {
+      .then(function(event) {
 
-      cb(null, {
-        "event": event
+        cb(null, {
+          "event": event
+        });
+
+      }, function(err) {
+        errCallback(err, cb);
       });
 
-    }, function(err) {
-      errCallback(err, cb);
-    });
+  };
+
+  /**
+   * /:id/event/:eventid/golfer/:golferid
+   *
+   * returns the round scoring data for this event in the game
+   *
+   **/
+  Fantasy.getGolfer = function(id, eventid, golferid, cb) {
+
+    console.log("getting scores for golfer " + golferid + ", game " + id + " and event " + eventid);
+
+    var Game = app.models.Game.Promise;
+
+    Game.getGolfer(id, eventid, golferid)
+      .then(function(scores) {
+
+        cb(null, {
+          "scores": scores
+        });
+
+      }, function(err) {
+        errCallback(err, cb);
+      });
 
   };
 

@@ -1,3 +1,4 @@
+
 var endOfDay = function(date) {
   // convert timems to end of the current day.
   // this will give us a grace period for comparisons
@@ -18,17 +19,6 @@ var dayOfWeekString = function(theDate) {
   return days[dateObj.getDay()];
 };
 
-var dateString = function(theDate) {
-  var months = ["January", "February", "March", "April",
-    "May", "June", "July", "August", "September",
-    "October", "November", "December"
-  ];
-
-  var dateObj = new Date(theDate);
-  return dayOfWeekString(theDate) + ", " +
-    months[dateObj.getMonth()] + " " + dateObj.getDate();
-};
-
 var timeString = function(theDate) {
   var dateObj = new Date(theDate);
 
@@ -44,69 +34,95 @@ var timeString = function(theDate) {
   return strTime;
 };
 
-var dateTimeString = function(theDate) {
-  return dateString(theDate) + " " + timeString(theDate);
-};
 
-//
-// dates come in from tourdata in GMT time.  that messes up our start/end calculations,
-// so account for it in this function
-//
-exports.adjustedForTimezone = function(date) {
-  var newDate = new Date(date);
+function DateUtils() {
 
-  newDate.setTime(newDate.getTime() + newDate.getTimezoneOffset() * 60 * 1000);
+  // we define "now" in the eastern time zone for the start of
+  // date comparisons.  the code below will conver to the eastern
+  // time zone regardless of the server time zone
+  var offset = -4;  // Eastern timezone
+  var d = new Date();
+  var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  var now = new Date(utc + (3600000*offset));
 
-  return newDate;
-};
+  this.dateString = function(theDate) {
+    var months = ["January", "February", "March", "April",
+      "May", "June", "July", "August", "September",
+      "October", "November", "December"
+    ];
 
-exports.tournamentComplete = function(date, start, end) {
+    var dateObj = new Date(theDate);
+    return dayOfWeekString(theDate) + ", " +
+      months[dateObj.getMonth()] + " " + dateObj.getDate();
+  };
 
-  // bump end date to end of the current day before comparing
-  end = endOfDay(end);
+  this.dateTimeString = function(theDate) {
+    return this.dateString(theDate) + " " + timeString(theDate);
+  };
 
-  console.log("tournamentComplete: start: " +
-    dateTimeString(start) + " end: " + dateTimeString(end) +
-    " date: " + dateTimeString(date));
-
-  return date.getTime() > end.getTime();
-};
-
-exports.tournamentInProgress = function(date, start, end) {
-
-  // bump end date to end of the current day before comparing
-  end = endOfDay(end);
-
-  console.log("tournamentInProgress: start: " +
-    dateTimeString(start) + " end: " + dateTimeString(end) +
-    " date: " + dateTimeString(date));
-
-  return (date.getTime() > start.getTime()) && (date.getTime() < end.getTime());
-};
-
-exports.tournamentOpens = function(start) {
   //
-  // we allow picks to be set a few days before the start of the tournament
-  // check for that here
+  // dates come in from tourdata in GMT time.  that messes up our start/end calculations,
+  // so account for it in this function
   //
-  var daysInAdvance = 1000 * 60 * 60 * 24 * 3; // 3 days in advance, e.g. Monday before the tournament
-  var opens = start.getTime() - daysInAdvance;
+  this.adjustedForTimezone = function(date) {
+    var newDate = new Date(date);
 
-  return opens;
+    newDate.setTime(newDate.getTime() + newDate.getTimezoneOffset() * 60 * 1000);
+
+    return newDate;
+  };
+
+  this.tournamentComplete = function(start, end) {
+
+    // bump end date to end of the current day before comparing
+    end = endOfDay(end);
+
+    console.log("tournamentComplete: start: " +
+      this.dateTimeString(start) + " end: " + this.dateTimeString(end) +
+      " date: " + this.dateTimeString(now));
+
+    return now.getTime() > end.getTime();
+  };
+
+  this.tournamentInProgress = function(start, end) {
+
+    // bump end date to end of the current day before comparing
+    end = endOfDay(end);
+
+    console.log("tournamentInProgress: start: " +
+      this.dateTimeString(start) + " end: " + this.dateTimeString(end) +
+      " date: " + this.dateTimeString(now));
+
+    return (now.getTime() > start.getTime()) && (now.getTime() < end.getTime());
+  };
+
+  this.tournamentOpens = function(start) {
+    //
+    // we allow picks to be set a few days before the start of the tournament
+    // check for that here
+    //
+    var daysInAdvance = 1000 * 60 * 60 * 24 * 3; // 3 days in advance, e.g. Monday before the tournament
+    var opens = start.getTime() - daysInAdvance;
+
+    return opens;
+  };
+
+  this.tournamentIsOpen = function(start, end) {
+    var opens = this.tournamentOpens(start);
+
+    console.log("tournamentIsOpen: tournament opens for picks on: " +
+      this.dateTimeString(new Date(opens)) + " current time: " + this.dateTimeString(now));
+
+    console.log("date: " +
+      now.getTime() + " opens: " + opens);
+
+    if (now.getTime() >= opens) {
+      return true;
+    }
+
+    return false;
+  };
+
 };
 
-exports.tournamentIsOpen = function(date, start, end) {
-  var opens = exports.tournamentOpens(start);
-
-  console.log("tournamentIsOpen: tournament opens for picks on: " +
-    dateTimeString(new Date(opens)) + " current time: " + dateTimeString(date));
-
-  console.log("date: " +
-    date.getTime() + " opens: " + opens);
-
-  if (date.getTime() >= opens) {
-    return true;
-  }
-
-  return false;
-};
+module.exports = DateUtils;

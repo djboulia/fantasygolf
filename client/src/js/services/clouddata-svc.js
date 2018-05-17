@@ -447,6 +447,7 @@ angular.module('GolfPicks.cloud', [])
 
       this.id = roster.id;
       this.game = roster.data.game;
+      this.event = roster.data.event;
       this.gamers = roster.data.gamers;
       this.players = roster.data.roster;
     };
@@ -578,7 +579,10 @@ angular.module('GolfPicks.cloud', [])
             for (var i = 0; i < obj.length; i++) {
               var gamer = obj[i];
 
-              gamers.push({id: gamer.id, name: gamer.data.name});
+              gamers.push({
+                id: gamer.id,
+                name: gamer.data.name
+              });
             }
           }
 
@@ -692,13 +696,14 @@ angular.module('GolfPicks.cloud', [])
 
         return deferred.promise;
       },
-      getRosterGamer: function(gameid, user) {
+      getRosterGamer: function(gameid, eventid, user) {
         var deferred = $q.defer();
 
         console.log("About to get roster for this gamer");
 
         Fantasy.getRosterGamer({
             id: gameid,
+            eventid: eventid,
             gamerid: user.getId()
           },
           function(obj) {
@@ -890,6 +895,51 @@ angular.module('GolfPicks.cloud', [])
             console.log("Got event");
             console.log(JSON.stringify(obj));
             deferred.resolve(obj.event);
+          },
+          function(err) {
+            deferred.reject({
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getGolfer: function(gameid, eventid, golferid) {
+        var deferred = $q.defer();
+
+        console.log("About to get event " + eventid + " for game " + gameid + " and golfer " + golferid);
+
+        Fantasy.getGolfer({
+            id: gameid,
+            eventid: eventid,
+            golferid: golferid
+          },
+          function(obj) {
+            console.log("Got golfer");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(obj.scores);
+          },
+          function(err) {
+            deferred.reject({
+              "err": err
+            });
+          });
+
+        return deferred.promise;
+      },
+      getEventRoster: function(gameid, eventid) {
+        var deferred = $q.defer();
+
+        console.log("About to get roster for " + gameid + " and event " + eventid);
+
+        Fantasy.getEventRoster({
+            id: gameid,
+            eventid: eventid
+          },
+          function(obj) {
+            console.log("Got event roster");
+            console.log(JSON.stringify(obj));
+            deferred.resolve(new fantasyRoster(obj.roster));
           },
           function(err) {
             deferred.reject({

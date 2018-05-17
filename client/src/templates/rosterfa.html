@@ -1,0 +1,106 @@
+<div ng-controller="RosterFACtrl">
+
+  <script type="text/ng-template" id="pickUpPlayer.html">
+    <div class="modal-header">
+      <h3 class="modal-title">Select a player to drop</h3>
+    </div>
+    <div class="modal-body">
+      <div class="table-responsive">
+          <table class="table">
+              <thead>
+                  <tr>
+                      <th>Player</th>
+                      <th></th>
+                  </tr>
+              </thead>
+              <tbody>
+
+                  <tr ng-repeat="player in players">
+                    <td ng-class="{leadercell: player.selected}" ng-click="dropPlayer(player)">
+                        <div>{{player.name}}</div>
+                    </td>
+                  </tr>
+
+              </tbody>
+          </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" ng-disabled="!canSubmit" ng-click="ok()">OK</button>
+      <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+    </div>
+  </script>
+
+    <div class="row">
+
+        <div class="col-lg-6">
+            <rd-widget ng-show="errorMessage">
+                <rd-widget-body classes="small no-padding">
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td class="text-center" colspan="2">
+                                        <div class="status" ng-bind-html="errorMessage"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </rd-widget-body>
+            </rd-widget>
+
+            <rd-loading ng-hide="loaded"></rd-loading>
+            <rd-widget ng-show="loaded">
+                <rd-widget-header icon="fa-user" title="Free Agents for {{name}}">
+                </rd-widget-header>
+                <rd-widget-body classes="no-padding">
+
+                    <div class="instructions">
+                        <h3><div>{{name}}</div></h3>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Owner</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                              <tr ng-hide="!picksMessage">
+                                  <td class="text-center" colspan="3">
+                                      <div class="status" ng-bind-html="picksMessage"></div>
+                                  </td>
+                              </tr>
+
+                                <tr ng-repeat="player in players">
+                                  <td>
+                                      <div>{{player.name}}</div>
+                                  </td>
+                                  <td>
+                                      <div>{{player.selectedGamer.name}}</div>
+                                  </td>
+                                  <td>
+                                      <button class="button button-positive" ng-click="pickUpPlayer(player)">Pick up Player</button>
+                                  </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="text-center" colspan="3">
+                                        <div class="status" ng-bind-html="picksMessage"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </rd-widget-body>
+                <rd-widget>
+        </div>
+    </div>
+</div>

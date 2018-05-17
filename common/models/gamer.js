@@ -396,15 +396,60 @@ module.exports = function(Gamer) {
     return rosterGamer;
   };
 
-  Gamer.Promise.getRoster = function(gameid, gamerid) {
+  var findGolfer = function( id, event ) {
+      var golfers = event.scores;
+      var foundGolfer = null;
+
+      for (var i=0; i<golfers.length; i++) {
+        var golfer = golfers[i];
+
+        // console.log("comparing golfer " + JSON.stringify(golfer) );
+
+        if (golfer.id == id) {
+          foundGolfer = golfer;
+          break;
+        }
+      }
+
+      return foundGolfer;
+  };
+
+  Gamer.Promise.getRoster = function(gameid, eventid, gamerid) {
     var Roster = app.models.Roster.Promise;
+    var Game = app.models.Game.Promise;
+
+    var roster;
+    var rosterGamer;
 
     // get the roster for this individual gamer
     // first get the overall roster, then filter it to
     // just the entries that are associated with this gamer
     return new Promise(function(resolve, reject) {
-      Roster.findByGameId(gameid).then(function(roster) {
-        var rosterGamer = getRosterForGamer(roster, gamerid);
+
+      Roster.findByGameId(gameid).then(function(result) {
+        roster = result;
+
+        return Game.getEvent(gameid, eventid); // promise
+      }).then(function(event) {
+
+        rosterGamer = getRosterForGamer(roster, gamerid);
+
+        // go through the players in this event and see which ones match up
+        // with our roster.  For those that are in the event, we flag them
+        // so that we can indicate golfers in the field.
+
+        for (var i=0; i<rosterGamer.length; i++) {
+          var entry = rosterGamer[i];
+
+          var golfer = findGolfer( entry.player_id, event );
+
+          if (golfer) {
+            console.log("Golfer " + golfer.name + " is in the next event");
+            entry.inEvent = true;
+          } else {
+            entry.inEvent = false;
+          }
+        }
 
         roster.data.roster = rosterGamer;
 

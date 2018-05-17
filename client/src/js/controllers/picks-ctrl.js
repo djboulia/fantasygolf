@@ -8,6 +8,7 @@ angular.module('CloudApp')
 function PicksCtrl($scope, $stateParams, $cookieStore,
   $location, $sanitize, currentUser, fantasy) {
 
+  var eventRosterUrl = "#/rosterevent/id/eventid";
   var NUM_SELECTIONS = 5;
   var changed = false;
   var gameid = $stateParams.id;
@@ -162,7 +163,7 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
         //     }
         // }
 
-        return fantasy.getRosterGamer(gameid, currentUser); // promise
+        return fantasy.getRosterGamer(gameid, eventid, currentUser); // promise
       })
       .then(function(obj) {
           roster = obj;
@@ -173,6 +174,7 @@ function PicksCtrl($scope, $stateParams, $cookieStore,
           loadSavedPicks(golfers, picks.picks);
           debug("Picks : " + JSON.stringify(picks));
 
+          $scope.eventRosterUrl = eventRosterUrl + "/" + gameid + "/" + eventid;
           $scope.game = roster.game.name;
           $scope.players = golfers;
           $scope.NUM_SELECTIONS = NUM_SELECTIONS;

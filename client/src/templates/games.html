@@ -4,7 +4,7 @@
     <div class="col-lg-6">
       <rd-loading ng-hide="loaded"></rd-loading>
       <rd-widget ng-show="loaded">
-        <rd-widget-header icon="fa-trophy" title="Games for {{username}}">
+        <rd-widget-header icon="fa-trophy" title="{{username}}">
         </rd-widget-header>
         <rd-widget-body classes="small no-padding">
           <h4 style="text-align:center">Current Games</h4>
@@ -13,28 +13,45 @@
               <tbody id="nextevent">
 
                 <tr ng-if="active">
-                  <td class="text-left"><b>{{active.name}}</b>
-                  </td>
-                  <td ng-if="active" class="text-center"><a ng-href="{{leaderboardUrl}}/id/{{active.id}}">Leaderboard</a>
-                  </td>
+                  <th class="text-left">Game
+                  </th>
+                  <th>
+                  </th>
+                  <th>
+                  </th>
+                  <th class="text-left">Next Tournament
+                  </th>
+                  <th>
+                  </th>
                 </tr>
 
-                <tr ng-if="active.nextEvent">
-                  <td ng-if="active.nextEvent.inProgress" class="text-center">Current event: {{active.nextEvent.name}}
-                  </td>
-                  <td ng-if="!active.nextEvent.inProgress" class="text-center">Next event: {{active.nextEvent.name}}
+                <tr ng-if="active">
+                  <td class="text-left"><b>{{active.name}}</b>
                   </td>
 
-                  <td ng-if="active.nextEvent.canSetPicks" class="text-center"><a ng-href="{{picksUrl}}/id/event/{{active.id}}/{{active.nextEvent.id}}">Set Lineup</a>
+                  <td class="text-left"><a href="{{freeAgentsUrl}}/{{active.id}}">Free Agents</a>
                   </td>
-                  <td ng-if="active.nextEvent.inProgress" class="text-center"><a ng-href="{{tournamentUrl}}/{{active.id}}/{{active.nextEvent.id}}">Tournament</a> in progress.
+
+                  <td ng-if="active" class="text-center"><a ng-href="{{leaderboardUrl}}/id/{{active.id}}">Leaderboard</a>
                   </td>
-                  <td ng-if="active.nextEvent.opens" class="text-center">You can set your line up on {{active.nextEvent.opens}}
+
+                  <td ng-if="active.nextEvent" class="text-left">{{active.nextEvent.name}}
+                  </td>
+                  <td ng-if="!active.nextEvent" class="text-left">
+                  </td>
+
+                  <td ng-if="active.nextEvent && active.nextEvent.canSetPicks" class="text-center"><a ng-href="{{picksUrl}}/id/event/{{active.id}}/{{active.nextEvent.id}}">Set Lineup</a>
+                  </td>
+                  <td ng-if="active.nextEvent && active.nextEvent.inProgress" class="text-center"><a ng-href="{{tournamentUrl}}/{{active.id}}/{{active.nextEvent.id}}">In progress</a>
+                  </td>
+                  <td ng-if="active.nextEvent && active.nextEvent.opens" class="text-center">Lineup opens {{active.nextEvent.opens}}
+                  </td>
+                  <td ng-if="!active.nextEvent" class="text-center">
                   </td>
                 </tr>
 
                 <tr>
-                  <td class="text-center" colspan="2">
+                  <td class="text-center" colspan="5">
                     <div class="status" ng-bind-html="statusMessage"></div>
                   </td>
                 </tr>

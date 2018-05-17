@@ -24,6 +24,7 @@
       <rd-loading ng-hide="loaded"></rd-loading>
       <rd-widget ng-show="loaded">
         <rd-widget-header icon="fa-trophy" title="Picks for {{username}}">
+          <a href="{{eventRosterUrl}}">Event Roster</a>
         </rd-widget-header>
 
         <rd-widget-body classes="no-padding">
@@ -60,13 +61,18 @@
                     </input>
                   </td>
                   <td>
-                    <div ng-class="{'toppick': player.index<=NUM_TOP_RANK, 'disabled':!player.selectable}">{{player.name}}</div>
+                    <div ng-class="{'toppick': player.inEvent, 'disabled':!player.selectable}">{{player.name}}</div>
                   </td>
                 </tr>
 
                 <tr>
                   <td class="text-center" colspan="3">
                     <button class="button button-positive" ng-disabled="!canSubmit" ng-click="submit()">Save Picks</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-center" colspan="3">
+                    Players in <span class="toppick">blue</span> are projected to be in the field for the this event.
                   </td>
                 </tr>
                 <tr>
