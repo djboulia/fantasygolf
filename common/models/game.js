@@ -1,5 +1,5 @@
 var logger = require('../lib/logger.js');
-var DateUtils = require('../lib/dateutils.js');
+var TourDates = require('../lib/tourdates.js');
 var TourSeason = require('../lib/tourseason.js');
 var TourEvent = require('../lib/tourevent.js');
 
@@ -243,7 +243,7 @@ module.exports = function(Game) {
     return games;
   };
 
-  var createNextEvent = function(dateObject, event) {
+  var createNextEvent = function(tourDates, event) {
     var nextEvent = {};
 
     nextEvent.id = event.id;
@@ -253,15 +253,15 @@ module.exports = function(Game) {
     nextEvent.inProgress = false;
     nextEvent.canSetPicks = false;
 
-    var start = dateObject.adjustedForTimezone(event.start);
-    var end = dateObject.adjustedForTimezone(event.end);
+    var start = event.start;
+    var end = event.end;
 
-    if (dateObject.tournamentInProgress(start, end)) {
+    if (tourDates.tournamentInProgress(start, end)) {
       nextEvent.inProgress = true;
-    } else if (dateObject.tournamentIsOpen(start, end)) {
+    } else if (tourDates.tournamentIsOpen(start, end)) {
       nextEvent.canSetPicks = true;
     } else {
-      nextEvent.opens = dateObject.dateString(dateObject.tournamentOpens(start));
+      nextEvent.opens = tourDates.tournamentOpensString(start);
     }
 
     return nextEvent;
@@ -290,20 +290,20 @@ module.exports = function(Game) {
 
     // look for first event that hasn't ended yet
     var nextEvent = null;
-    var dateObject = new DateUtils();
+    var tourDates = new TourDates();
 
     for (var s = 0; s < schedule.length; s++) {
       var event = schedule[s];
-      var start = dateObject.adjustedForTimezone(event.start);
-      var end = dateObject.adjustedForTimezone(event.end);
+      var start = event.start;
+      var end = event.end;
 
       if (!event.start || !event.end) {
         console.error("ERROR: couldn't find schedule details!");
         break;
       }
 
-      if (!dateObject.tournamentComplete(start, end)) {
-        nextEvent = createNextEvent(dateObject, event);
+      if (!tourDates.tournamentComplete(start, end)) {
+        nextEvent = createNextEvent(tourDates, event);
 
         break;
       }
