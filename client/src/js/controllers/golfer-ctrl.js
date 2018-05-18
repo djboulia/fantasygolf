@@ -14,14 +14,14 @@ function GolferCtrl($scope, $stateParams, $location, fantasy) {
 
   var getRoundTotals = function(round) {
     var totals = {
-      front : 0,
-      back : 0,
-      total : 0
+      front: 0,
+      back: 0,
+      total: 0
     };
 
-    for (var i=0; i<9; i++) {
+    for (var i = 0; i < 9; i++) {
       var front = i;
-      var back = i+9;
+      var back = i + 9;
 
       totals.front += parseInt(round.par_values[front]);
       totals.back += parseInt(round.par_values[back]);
@@ -32,25 +32,102 @@ function GolferCtrl($scope, $stateParams, $location, fantasy) {
     return totals;
   }
 
+  //
+  // we add front, back and totals
+  // NOTE: if the round is incomplete, we don't return any totals
+  //
   var getPlayerTotals = function(round) {
-    var totals = {
-      front : 0,
-      back : 0,
-      total : 0
+
+    var incompleteRound = {
+      front: "",
+      back: "",
+      total: ""
     };
 
-    for (var i=0; i<9; i++) {
-      var front = i;
-      var back = i+9;
+    var totals = {
+      front: 0,
+      back: 0,
+      total: 0
+    };
 
-      totals.front += parseInt(round.round_values[front]);
-      totals.back += parseInt(round.round_values[back]);
+    for (var i = 0; i < 9; i++) {
+      var front = i;
+      var back = i + 9;
+
+      var frontVal = parseInt(round.round_values[front]);
+      var backVal = parseInt(round.round_values[back]);
+
+      // if we find any invalid round values, assume the round is incomplete
+      if (isNaN(frontVal) || isNaN(backVal)) {
+        console.log("incomplete round found");
+
+        return incompleteRound;
+      }
+
+      totals.front += frontVal;
+      totals.back += backVal;
     }
 
     totals.total += totals.front + totals.back;
 
     return totals;
   }
+
+  var getNetValues = function(round) {
+    var netScores = [];
+
+    for (var i = 0; i < round.net_values.length; i++) {
+      var netVal = round.net_values[i];
+      var classVal = "par";
+
+      if (netVal != "E") {
+        netVal = parseInt(netVal);
+
+        switch (netVal) {
+          case -2:
+            classVal = "eagle";
+            break;
+          case -1:
+            classVal = "birdie";
+            break;
+          case 1:
+            classVal = "bogie";
+            break;
+          case 2:
+            classVal = "double-bogie";
+            break;
+          default:
+            if (netVal < -2) {
+              classVal = "albatross";
+            } else if (netVal > 2){
+              classVal = "other";
+            } else {
+              classVal = "";
+            }
+        }
+      }
+
+      netScores.push(classVal);
+    }
+
+    return netScores;
+  }
+
+  var setCurrentRoundInfo = function(roundNumber, $scope) {
+    var scores = $scope.scores;
+
+    $scope.roundNumber = roundNumber;
+    $scope.round = scores.round_details[roundNumber]; // default to first round initially
+    $scope.totals = getRoundTotals(scores.round_details[roundNumber]);
+    $scope.playerTotals = getPlayerTotals(scores.round_details[roundNumber]);
+    $scope.net = getNetValues(scores.round_details[roundNumber]);
+  };
+
+  $scope.roundClicked = function(roundNumber) {
+    console.log("Clicked on round number " + roundNumber);
+
+    setCurrentRoundInfo(roundNumber, $scope);
+  };
 
   $scope.loadItems = function() {
 
@@ -66,17 +143,25 @@ function GolferCtrl($scope, $stateParams, $location, fantasy) {
     // called when we've loaded initial game data
     var eventLoadedHandler = function(gameid, eventid) {
 
-      // load the current event associated with this game
-      // the EVENT holds the golfers
-      // the GAME is the game played based on the golfer's scores
-
       fantasy.getGolfer(gameid, eventid, golferid)
         .then(function(scores) {
             $scope.scores = scores;
-            $scope.roundNumber = 1;
-            $scope.round = scores.round_details[1]; // default to first round initially
-            $scope.totals = getRoundTotals(scores.round_details[1]);
-            $scope.playerTotals = getPlayerTotals(scores.round_details[1]);
+
+            if (scores) {
+              // walk backwards and by default display the most recent round first
+              var currentRound = 1;
+
+              for (var i = 4; i > 0; i--) {
+                if (scores.round_details[i]) {
+                  currentRound = i;
+                  break;
+                }
+              }
+
+              setCurrentRoundInfo(currentRound, $scope);
+            } else {
+              $scope.errorMessage = "Golfer not found in this tournament.";
+            }
 
             $scope.loaded = true;
           },

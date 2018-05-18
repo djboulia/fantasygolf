@@ -10,12 +10,41 @@
 		</div>
 	</div>
 
-	<div class="row">
+	<div ng-hide="!scores" class="row">
 
 		<div>
 			<rd-widget ng-show="loaded">
 				<rd-widget-header icon="fa-user" title="{{scores.name}} ({{scores.total}})">
-					<div>Round {{roundNumber}}</div>
+					<div>Round
+						<button
+							class="round-number btn btn-sm btn-info ng-scope"
+							ng-class="{'current-round': roundNumber==1, 'disabled':!scores.round_details[1]}"
+							ng-click="roundClicked(1);"
+							ng-disabled="!scores.round_details[1]">
+								1
+						</button>
+						<button
+							class="round-number btn btn-sm btn-info ng-scope"
+							ng-class="{'current-round': roundNumber==2, 'disabled':!scores.round_details[2]}"
+							ng-click="roundClicked(2);"
+							ng-disabled="!scores.round_details[2]">
+								2
+						</button>
+						<button
+							class="round-number btn btn-sm btn-info ng-scope"
+							ng-class="{'current-round': roundNumber==3, 'disabled':!scores.round_details[3]}"
+							ng-click="roundClicked(3);"
+							ng-disabled="!scores.round_details[3]">
+								3
+						</button>
+						<button
+							class="round-number btn btn-sm btn-info ng-scope"
+							ng-class="{'current-round': roundNumber==4, 'disabled':!scores.round_details[4]}"
+							ng-click="roundClicked(4);"
+							ng-disabled="!scores.round_details[4]">
+								4
+						</button>
+					</div>
 				</rd-widget-header>
 				<rd-widget-body classes="no-padding">
 					<div class="table-responsive">
@@ -23,89 +52,89 @@
 							<tbody>
 								<tr class="scorecard hole">
 									<th>Hole</th>
-									<th>1</th>
-									<th>2</th>
-									<th>3</th>
-									<th>4</th>
-									<th>5</th>
-									<th>6</th>
-									<th>7</th>
-									<th>8</th>
-									<th>9</th>
-									<th>OUT</th>
-									<th></th>
+									<td><div class="scorecell par">1</div></td>
+									<td><div class="scorecell par">2</div></td>
+									<td><div class="scorecell par">3</div></td>
+									<td><div class="scorecell par">4</div></td>
+									<td><div class="scorecell par">5</div></td>
+									<td><div class="scorecell par">6</div></td>
+									<td><div class="scorecell par">7</div></td>
+									<td><div class="scorecell par">8</div></td>
+									<td><div class="scorecell par">9</div></td>
+									<td><div class="scorecell par">OUT</div></td>
+									<td><div class="scorecell par"></div></td>
 								</tr>
 								<tr class="scorecard par">
-									<td>Par</td>
-									<td>{{round.par_values[0]}}</td>
-									<td>{{round.par_values[1]}}</td>
-									<td>{{round.par_values[2]}}</td>
-									<td>{{round.par_values[3]}}</td>
-									<td>{{round.par_values[4]}}</td>
-									<td>{{round.par_values[5]}}</td>
-									<td>{{round.par_values[6]}}</td>
-									<td>{{round.par_values[7]}}</td>
-									<td>{{round.par_values[8]}}</td>
-									<td>{{totals.front}}</td>
+									<td><div class="scorecell header">Par</div></td>
+									<td><div class="scorecell par">{{round.par_values[0]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[1]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[2]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[3]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[4]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[5]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[6]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[7]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[8]}}</div></td>
+									<td><div class="scorecell par">{{totals.front}}</div></td>
 									<td></td>
 								</tr>
 
 								<tr class="scorecard handicap">
 									<td>Score</td>
-									<td>{{round.round_values[0]}}</td>
-									<td>{{round.round_values[1]}}</td>
-									<td>{{round.round_values[2]}}</td>
-									<td>{{round.round_values[3]}}</td>
-									<td>{{round.round_values[4]}}</td>
-									<td>{{round.round_values[5]}}</td>
-									<td>{{round.round_values[6]}}</td>
-									<td>{{round.round_values[7]}}</td>
-									<td>{{round.round_values[8]}}</td>
-									<td>{{playerTotals.front}}</td>
+									<td><div class="scorecell {{net[0]}}">{{round.round_values[0]}}</div></td>
+									<td><div class="scorecell {{net[1]}}">{{round.round_values[1]}}</div></td>
+									<td><div class="scorecell {{net[2]}}">{{round.round_values[2]}}</div></td>
+									<td><div class="scorecell {{net[3]}}">{{round.round_values[3]}}</div></td>
+									<td><div class="scorecell {{net[4]}}">{{round.round_values[4]}}</div></td>
+									<td><div class="scorecell {{net[5]}}">{{round.round_values[5]}}</div></td>
+									<td><div class="scorecell {{net[6]}}">{{round.round_values[6]}}</div></td>
+									<td><div class="scorecell {{net[7]}}">{{round.round_values[7]}}</div></td>
+									<td><div class="scorecell {{net[8]}}">{{round.round_values[8]}}</div></td>
+									<td class="scorecell par">{{playerTotals.front}}</td>
 									<td></td>
 								</tr>
 								<tr class="scorecard hole">
-									<th>Hole</th>
-									<th>10</th>
-									<th>11</th>
-									<th>12</th>
-									<th>13</th>
-									<th>14</th>
-									<th>15</th>
-									<th>16</th>
-									<th>17</th>
-									<th>18</th>
-									<th>IN</th>
-									<th>TOTAL</th>
+									<td><div class="scorecell header">Hole</div></td>
+									<td><div class="scorecell par">10</div></td>
+									<td><div class="scorecell par">11</div></td>
+									<td><div class="scorecell par">12</div></td>
+									<td><div class="scorecell par">13</div></td>
+									<td><div class="scorecell par">14</div></td>
+									<td><div class="scorecell par">15</div></td>
+									<td><div class="scorecell par">16</div></td>
+									<td><div class="scorecell par">17</div></td>
+									<td><div class="scorecell par">18</div></td>
+									<td><div class="scorecell par">IN</div></td>
+									<td><div class="scorecell par">TOTAL</div></td>
 								</tr>
 								<tr class="scorecard par">
-									<td>Par</td>
-									<td>{{round.par_values[9]}}</td>
-									<td>{{round.par_values[10]}}</td>
-									<td>{{round.par_values[11]}}</td>
-									<td>{{round.par_values[12]}}</td>
-									<td>{{round.par_values[13]}}</td>
-									<td>{{round.par_values[14]}}</td>
-									<td>{{round.par_values[15]}}</td>
-									<td>{{round.par_values[16]}}</td>
-									<td>{{round.par_values[17]}}</td>
-									<td>{{totals.back}}</td>
-									<td>{{totals.total}}</td>
+									<td><div class="scorecell header">Par</div></td>
+									<td><div class="scorecell par">{{round.par_values[9]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[10]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[11]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[12]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[13]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[14]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[15]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[16]}}</div></td>
+									<td><div class="scorecell par">{{round.par_values[17]}}</div></td>
+									<td><div class="scorecell par">{{totals.back}}</div></td>
+									<td><div class="scorecell par">{{totals.total}}</div></td>
 								</tr>
 
 								<tr class="scorecard handicap">
-									<td>Score</td>
-									<td>{{round.round_values[9]}}</td>
-									<td>{{round.round_values[10]}}</td>
-									<td>{{round.round_values[11]}}</td>
-									<td>{{round.round_values[12]}}</td>
-									<td>{{round.round_values[13]}}</td>
-									<td>{{round.round_values[14]}}</td>
-									<td>{{round.round_values[15]}}</td>
-									<td>{{round.round_values[16]}}</td>
-									<td>{{round.round_values[17]}}</td>
-									<td>{{playerTotals.back}}</td>
-									<td>{{playerTotals.total}}</td>
+									<td><div class="scorecell header">Score</div></td>
+									<td><div class="scorecell {{net[9]}}">{{round.round_values[9]}}</div></td>
+									<td><div class="scorecell {{net[10]}}">{{round.round_values[10]}}</div></td>
+									<td><div class="scorecell {{net[11]}}">{{round.round_values[11]}}</div></td>
+									<td><div class="scorecell {{net[12]}}">{{round.round_values[12]}}</div></td>
+									<td><div class="scorecell {{net[13]}}">{{round.round_values[13]}}</div></td>
+									<td><div class="scorecell {{net[14]}}">{{round.round_values[14]}}</div></td>
+									<td><div class="scorecell {{net[15]}}">{{round.round_values[15]}}</div></td>
+									<td><div class="scorecell {{net[16]}}">{{round.round_values[16]}}</div></td>
+									<td><div class="scorecell {{net[17]}}">{{round.round_values[17]}}</div></td>
+									<td><div class="scorecell par">{{playerTotals.back}}</div></td>
+									<td><div class="scorecell par">{{playerTotals.total}}</div></td>
 								</tr>
 							</tbody>
 						</table>
@@ -117,7 +146,7 @@
 	</div>
 
 
-	<div class="row">
+	<div ng-hide="!scores" class="row">
 
 		<div>
 			<rd-widget ng-show="loaded">
@@ -224,7 +253,7 @@
 
 							</tbody>
 						</table>
-										</div>
+					</div>
 				</rd-widget-body>
 			</rd-widget>
 
