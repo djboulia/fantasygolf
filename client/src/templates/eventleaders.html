@@ -32,7 +32,7 @@
                                 </thead>
                                 <tr ng-repeat="golfer in golfers">
                                     <td class="text-center">{{$index+1}}</td>
-                                    <td>{{golfer.name}}</td>
+                                    <td><a href="{{golferUrl + '/' + golfer.id}}">{{golfer.name}}</a></td>
                                     <td  class="text-center" style="border: 1px solid #cccccc;">{{golfer.total}}</td>
                                     <td ng-repeat="roundNumber in roundNumbers" class="text-center" style="border: 1px solid #cccccc;">
                                         <div ng-class="{'golf-round-leader': lowRounds[$index] == golfer[roundNumber]}">{{golfer[roundNumber]}}</div>

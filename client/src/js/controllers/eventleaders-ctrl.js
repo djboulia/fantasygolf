@@ -1,72 +1,76 @@
 angular.module('CloudApp')
-    .controller('EventLeadersCtrl', ['$scope', '$stateParams', '$location',
-                                      'cdFantasy', EventLeadersCtrl]);
+  .controller('EventLeadersCtrl', ['$scope', '$stateParams', '$location',
+    'cdFantasy', EventLeadersCtrl
+  ]);
 
 
 function EventLeadersCtrl($scope, $stateParams, $location, fantasy) {
 
-    $scope.loadItems = function () {
+  var golferUrl = "#/golfer/id/eventid/golferid";
 
-        $scope.statusMessage = "Loading...";
+  $scope.loadItems = function() {
 
-        // if testingMode is a url parameter, turn off some of the date/rule checking
-        var testingMode = $location.search().testingMode ? true : false;
-        console.log("testingMode is set to " + testingMode);
+    $scope.statusMessage = "Loading...";
 
-        // if debugMode is a url parameter, write more info to the log
-        var debugMode = $location.search().debugMode ? true : false;
+    // if testingMode is a url parameter, turn off some of the date/rule checking
+    var testingMode = $location.search().testingMode ? true : false;
+    console.log("testingMode is set to " + testingMode);
 
-        // called when we've loaded initial game data
-        var eventLoadedHandler = function (gameid, eventid) {
+    // if debugMode is a url parameter, write more info to the log
+    var debugMode = $location.search().debugMode ? true : false;
 
-            // load the current event associated with this game
-            // the EVENT holds the golfers
-            // the GAME is the game played based on the golfer's scores
+    // called when we've loaded initial game data
+    var eventLoadedHandler = function(gameid, eventid) {
 
-            fantasy.getEvent(gameid, eventid)
-                .then(function (event) {
-                        $scope.name = event.name;
-                        $scope.golfers = event.scores;
-                        $scope.roundNumbers = event.roundNumbers;
-                        $scope.lowRounds = event.lowRounds;
-                        $scope.eventOverviewUrl = "#/eventdetails/id/" + eventid;
+      // load the current event associated with this game
+      // the EVENT holds the golfers
+      // the GAME is the game played based on the golfer's scores
 
-                        $scope.loaded = true;
-                    },
-                    function (err) {
-                        // The object was not retrieved successfully.
-                        console.error("Couldn't access event information!");
+      fantasy.getEvent(gameid, eventid)
+        .then(function(event) {
+            $scope.name = event.name;
+            $scope.golfers = event.scores;
+            $scope.roundNumbers = event.roundNumbers;
+            $scope.lowRounds = event.lowRounds;
+            $scope.eventOverviewUrl = "#/eventdetails/id/" + eventid;
+            $scope.golferUrl = golferUrl + "/" + gameid + "/" + eventid;
 
-                        $scope.$apply(function () {
-                            $scope.errorMessage = "Couldn't access event information!";
-                        });
-                    });
-        }
+            $scope.loaded = true;
+          },
+          function(err) {
+            // The object was not retrieved successfully.
+            console.error("Couldn't access event information!");
 
-        var gameid = $stateParams.id;
-        var eventid = $stateParams.eventid;
-
-        if (eventid) {
-            eventLoadedHandler(gameid, eventid);
-        } else {
-            console.log("error! no eventid specified!");
-            $scope.errorMessage = "error! no eventid specified!";
-        }
-
+            $scope.$apply(function() {
+              $scope.errorMessage = "Couldn't access event information!";
+            });
+          });
     }
 
-    $scope.onRefresh = function () {
-        console.log("Refreshing event leaders");
+    var gameid = $stateParams.id;
+    var eventid = $stateParams.eventid;
 
-        // Go back to the Cloud and load a new set of Objects
-        // as a hard refresh has been done
-        $scope.loadItems();
+    if (eventid) {
+      eventLoadedHandler(gameid, eventid);
+    } else {
+      console.log("error! no eventid specified!");
+      $scope.errorMessage = "error! no eventid specified!";
+    }
 
-        // set the timeout interval to refresh every 5 minutes
-        var REFRESH_MINUTES = 5;
+  }
 
-        setTimeout($scope.onRefresh, REFRESH_MINUTES * 1000 * 60);
-    };
+  $scope.onRefresh = function() {
+    console.log("Refreshing event leaders");
 
-    $scope.onRefresh();
+    // Go back to the Cloud and load a new set of Objects
+    // as a hard refresh has been done
+    $scope.loadItems();
+
+    // set the timeout interval to refresh every 5 minutes
+    var REFRESH_MINUTES = 5;
+
+    setTimeout($scope.onRefresh, REFRESH_MINUTES * 1000 * 60);
+  };
+
+  $scope.onRefresh();
 };
