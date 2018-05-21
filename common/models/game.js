@@ -207,12 +207,12 @@ module.exports = function(Game) {
           resolve(record);
 
         } else {
-          if (!record) {
-            var str = "Could not find game id " + id;
+          if (err) {
+            var str = "Error!" + JSON.stringify(err);
             logger.error(str);
             reject(str);
           } else {
-            var str = "Error!" + JSON.stringify(err);
+            var str = "Could not find game id " + id;
             logger.error(str);
             reject(str);
           }

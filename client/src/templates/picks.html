@@ -23,8 +23,7 @@
 
       <rd-loading ng-hide="loaded"></rd-loading>
       <rd-widget ng-show="loaded">
-        <rd-widget-header icon="fa-trophy" title="Picks for {{username}}">
-          <a href="{{eventRosterUrl}}">Event Roster</a>
+        <rd-widget-header icon="fa-trophy" title="Picks for {{username}} - {{game}}">
         </rd-widget-header>
 
         <rd-widget-body classes="no-padding">
@@ -33,16 +32,19 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>Game: {{game}}</th>
+                  <th>Event: {{event}}</th>
+                  <th><a href="{{eventRosterUrl}}">Add/Drop Players</a></th>
                 </tr>
               </thead>
+              <tbody>
+                <tr>
+                  <td colspan="2">Select {{NUM_SELECTIONS}} players from the list below.</td>
+                </tr>
+                <tr>
+                  <td colspan="2">Press 'Save Picks' at the bottom when finished.</td>
+                </tr>
+              </tbody>
               <table>
-          </div>
-
-          <div class="instructions">
-            <h5><div>{{event}}</div></h5>
-            <div>Select {{NUM_SELECTIONS}} players from the list.</div>
-            <div>Press 'Save Picks' at the bottom when finished.</div>
           </div>
 
           <div class="table-responsive">
