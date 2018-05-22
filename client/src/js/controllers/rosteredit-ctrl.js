@@ -1,10 +1,10 @@
 angular.module('CloudApp')
     .controller('RosterEditCtrl', ['$scope', '$stateParams',
-                               '$uibModal', '$cookieStore',
+                               '$uibModal', '$cookieStore', 'cloudDataCurrentUser',
                                'cdFantasy', RosterEditCtrl]);
 
 
-function RosterEditCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
+function RosterEditCtrl($scope, $stateParams, $uibModal, $cookieStore, currentUser, fantasy) {
     var gameid = $stateParams.id;
     var returnUrl = "#/roster/id/" + gameid;
 
@@ -70,7 +70,7 @@ function RosterEditCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) 
             var changed = [];
             changed.push(player);
 
-            fantasy.updateRoster(gameid, changed)
+            fantasy.updateRoster(gameid, currentUser, changed)
               .then(function(roster) {
                   $scope.picksMessage = "Roster saved.";
 
@@ -78,7 +78,7 @@ function RosterEditCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) 
                   window.location.href = returnUrl;
                 },
                 function(err) {
-                  logger.error("Couldn't access roster!");
+                  console.error("Couldn't access roster!");
 
                   $scope.errorMessage = "Couldn't access roster!";
                 });

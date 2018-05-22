@@ -121,7 +121,7 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
     }
 
     if (changed.length > 0) {
-      fantasy.updateRoster(gameid, changed)
+      fantasy.updateRoster(gameid, currentUser, changed)
         .then(function(roster) {
             $scope.picksMessage = "Roster saved.";
           },

@@ -1,6 +1,7 @@
 var logger = require('../lib/logger.js');
 var NameUtils = require('../lib/nameutils.js');
 var TourSeason = require('../lib/tourseason.js');
+var RosterCache = require('../lib/rostercache.js');
 
 //
 // this object manages creating/copying roster entries
@@ -20,12 +21,21 @@ var RosterEntry = {
     to.gamer = from.gamer;
     to.drafted_by = from.drafted_by;
     to.draft_round = from.draft_round;
+
+    return to;
   },
 
-  new: function(player) {
+  clone: function(player) {
     var newPlayer = {};
 
     RosterEntry.copy(newPlayer, player);
+
+    return newPlayer;
+  },
+
+  new: function(player) {
+
+    var newPlayer = RosterEntry.clone(player);
 
     // set the player_id if it doesn't exist
     if (!newPlayer.player_id) {
@@ -49,7 +59,41 @@ var RosterEntry = {
 
 };
 
+//
+// keep track of changes to the roster so that we can see modifications
+// over time
+//
+var RosterHistory = function(gamerid, history) {
+
+  this.modify = function(current, next) {
+      var data = {
+        action: "modify",
+        who: gamerid,
+        before: current,
+        after: next
+      };
+
+      history.push(data);
+
+      return data;
+    },
+
+    this.add = function(player) {
+      var data = {
+        action: "add",
+        who: gamerid,
+        record: player
+      };
+
+      history.push(data);
+
+      return data;
+    }
+};
+
 module.exports = function(Roster) {
+
+  var rosterCache = new RosterCache(Roster);
 
   var app = require('../../server/server');
 
@@ -58,45 +102,6 @@ module.exports = function(Roster) {
    * in the other modules
    **/
   Roster.Promise = {};
-
-  // internal helper to return raw roster record for this gameid
-  var rawFindByGameId = function(gameid) {
-    return new Promise(function(resolve, reject) {
-
-      Roster.find(function(err, records) {
-
-        if (!err && records) {
-
-          for (var i = 0; i < records.length; i++) {
-            var record = records[i];
-
-            if (record.data.game == gameid) {
-              console.log("roster " + record.id + " found for game " + gameid);
-              //              console.log("roster found for game " + gameid + " " + JSON.stringify(record));
-              resolve(record);
-              return;
-            }
-          }
-
-          var str = "no roster found for game " + gameid;
-          logger.error(str);
-          reject(str);
-
-        } else {
-          if (!records) {
-            var str = "Could not find rosters!";
-            logger.error(str);
-            reject(str);
-          } else {
-            var str = "Error!" + JSON.stringify(err);
-            logger.error(str);
-            reject(str);
-          }
-        }
-      });
-
-    });
-  };
 
   var addGameInfo = function(roster, gameid, game) {
     // fluff up the roster with game information
@@ -116,7 +121,7 @@ module.exports = function(Roster) {
       var Game = app.models.Game.Promise;
 
       var promiseGame = Game.findById(gameid);
-      var promiseRoster = rawFindByGameId(gameid);
+      var promiseRoster = rosterCache.getByGameId(gameid);
 
       Promise.all([promiseGame, promiseRoster]).then(function(values) {
         var game = values[0];
@@ -183,23 +188,13 @@ module.exports = function(Roster) {
         roster.data.transactions = [];
 
         // now create or replace the roster contents
-
-        Roster.replaceOrCreate(roster, function(err, record) {
-          if (!err && record) {
-
-            logger.log("updated roster for game " + roster.data.game);
+        rosterCache.update(roster)
+          .then(function(record) {
             resolve(record);
+          }, function(err) {
+            reject(err);
+          });
 
-          } else {
-            if (!record) {
-              var str = "Could not find rosters!";
-              reject(str);
-            } else {
-              var str = "Error!" + JSON.stringify(err);
-              reject(str);
-            }
-          }
-        });
       });
     });
   };
@@ -218,7 +213,7 @@ module.exports = function(Roster) {
 
           // see if we have a roster record for this game
           // if we do, re-initialize it, otherwise create new
-          rawFindByGameId(gameid).then(function(roster) {
+          rosterCache.getByGameId(gameid).then(function(roster) {
             console.log("re-initializing existing roster");
 
             updateOrCreateRoster(year, tour, roster)
@@ -264,9 +259,10 @@ module.exports = function(Roster) {
     return null;
   }
 
-  var updateRoster = function(roster, players) {
+  var updateRoster = function(gamerid, roster, players) {
     // go through the list and update the existing records
     var rosterData = roster.data.roster;
+    var history = new RosterHistory(gamerid, roster.data.transactions);
 
     for (var p = 0; p < players.length; p++) {
       var player = players[p];
@@ -274,13 +270,21 @@ module.exports = function(Roster) {
       var currentPlayer = Roster.Promise.findPlayer(player.player_id, roster);
 
       if (currentPlayer) {
+
         // existing player, copy new info to record
-        RosterEntry.copy(currentPlayer, player);
+        var before = RosterEntry.clone(currentPlayer);
+        var after = RosterEntry.copy(currentPlayer, player);
+
+        // record roster changes into our transaction history
+        history.modify(before, after);
+
       } else {
         // new player, create a new record and add to the roster
         currentPlayer = RosterEntry.new(player);
 
         rosterData.push(currentPlayer);
+
+        history.add(player);
       }
 
     }
@@ -288,46 +292,34 @@ module.exports = function(Roster) {
     return rosterData;
   }
 
-  Roster.Promise.update = function(gameid, players) {
+  Roster.Promise.update = function(gameid, gamerid, players) {
 
     return new Promise(function(resolve, reject) {
       // look up this game's roster, then insert or update the player records
 
-      rawFindByGameId(gameid)
-        .then(function(roster) {
+      var roster = null;
 
-          updateRoster(roster, players);
+      rosterCache.getByGameId(gameid)
+        .then(function(result) {
+          roster = result;
+
+          updateRoster(gamerid, roster, players);
 
           // now put the roster back
+          return rosterCache.update(roster); //promise
+        })
+        .then(function(result) {
+          roster = result;
 
-          Roster.replaceOrCreate(roster, function(err, record) {
-            if (!err && record) {
+          // we just updated the roster, which could make any current picks invalid
+          // check that and fix up if necessary
 
-              logger.log("updated roster for game " + gameid);
+          var Game = app.models.Game.Promise;
 
-              // we just updated the roster, which could make any current picks invalid
-              // check that and fix up if necessary
-
-              var Game = app.models.Game.Promise;
-
-              Game.resolveRosterUpdate(gameid, roster)
-                .then(function(game) {
-                  resolve(record);
-                }, function(err) {
-                  reject(err);
-                });
-
-            } else {
-              if (!record) {
-                var str = "Could not find rosters!";
-                reject(str);
-              } else {
-                var str = "Error!" + JSON.stringify(err);
-                reject(str);
-              }
-            }
-          });
-
+          return Game.resolveRosterUpdate(gameid, roster); // promise
+        })
+        .then(function(game) {
+          resolve(roster);
         }, function(err) {
           reject(err);
         });

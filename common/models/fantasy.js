@@ -230,7 +230,7 @@ module.exports = function(Fantasy) {
   Fantasy.remoteMethod(
     'getEventRoster', {
       http: {
-        path: '/:id/event/:eventid/roster',
+        path: '/:id/roster/event/:eventid',
         verb: 'get'
       },
       description: 'Get roster and highlight players in this event',
@@ -276,15 +276,20 @@ module.exports = function(Fantasy) {
   );
 
   Fantasy.remoteMethod(
-    'updatePlayers', {
+    'updateRoster', {
       http: {
-        path: '/:id/roster/players',
+        path: '/:id/roster/gamer/:gamerid/update',
         verb: 'put'
       },
       description: 'update or add player records',
 
       accepts: [{
           arg: 'id',
+          type: 'string',
+          required: true
+        },
+        {
+          arg: 'gamerid',
           type: 'string',
           required: true
         },
@@ -305,10 +310,10 @@ module.exports = function(Fantasy) {
   Fantasy.remoteMethod(
     'getRosterGamer', {
       http: {
-        path: '/:id/roster/gamer/:gamerid',
+        path: '/:id/roster/event/:eventid/gamer/:gamerid',
         verb: 'get'
       },
-      description: 'Get the current roster for this gamer',
+      description: 'Get current gamer roster and highlight players in this event',
 
       accepts: [{
           arg: 'id',
@@ -724,20 +729,21 @@ module.exports = function(Fantasy) {
   };
 
   /**
-   * /:id
+   * /:id/gamer/:gamerid/update
    *
-   * returns the roster for this game
+   * updates the roster for this game
    *
    **/
-  Fantasy.updatePlayers = function(id, players, cb) {
+  Fantasy.updateRoster = function(id, gamerid, players, cb) {
 
-    console.log("updating players in roster for game " + id);
+    console.log("gamer " + gamerid + " updating players in roster for game " + id);
 
     // look up this game's roster, then insert or update the player records
 
     var Roster = app.models.Roster.Promise;
 
-    Roster.update(id, players).then(function(roster) {
+    Roster.update(id, gamerid, players)
+    .then(function(roster) {
 
       cb(null, roster);
 

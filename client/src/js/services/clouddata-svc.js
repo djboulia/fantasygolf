@@ -673,15 +673,16 @@ angular.module('GolfPicks.cloud', [])
 
         return deferred.promise;
       },
-      updateRoster: function(gameid, records) {
+      updateRoster: function(gameid, user, records) {
         var deferred = $q.defer();
 
-        console.log("About to get roster");
+        console.log("About to update roster for user " + user.getId());
 
-        Fantasy.updatePlayers({
+        Fantasy.updateRoster({
             id: gameid,
+            gamerid: user.getId(),
             players: records
-          },
+          }, {},
           function(obj) {
             console.log("updated roster");
             console.log(JSON.stringify(obj));

@@ -160,7 +160,7 @@ function RosterFACtrl($scope, $stateParams, $uibModal, $cookieStore,
       changed.push(addPlayer);
       changed.push(dropPlayer);
 
-      fantasy.updateRoster(gameid, changed)
+      fantasy.updateRoster(gameid, currentUser, changed)
         .then(function(roster) {
             $scope.picksMessage = "Add/Drop complete.";
 
