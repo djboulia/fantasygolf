@@ -250,15 +250,20 @@ tr.selected {
 }
 
 .event-totals {
-	width: 450px;
+  min-width: 300px;
+  max-width: 450px;
+}
+
+.event-totals-table {
+  width: 100%;
   cellpadding: 4px;
   cellspacing: 1px;
-	border: 1px;
+	border: 1px solid #005500;
 }
 
 
 .leaderboard {
-	width: 450px;
+  max-width: 450px;
 	margin: 0 auto 0 auto;
 	padding: 5px;
 	border: 1px solid #cccccc;
@@ -267,8 +272,14 @@ tr.selected {
 	background: #005500;
 }
 
+.leaderboard-table {
+  width: 100%;
+  cellpadding: 4px;
+  cellspacing: 0px;
+}
+
 .leaderboard-header {
-    border-bottom: 1px solid #FFFFFF;
+  border-bottom: 1px solid #FFFFFF;
 	color: #ffffff;
 	background: #005500;
 }

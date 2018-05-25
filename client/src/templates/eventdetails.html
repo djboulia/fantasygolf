@@ -22,8 +22,6 @@
           <div ng-show="loaded">
             <h4 align="center" style="color:blue;" ng-bind-html="statusMessage"></h4>
 
-            <div style="float:right; font-size:80%; font-style:italic; padding-right:10px;" ng-bind-html="lastUpdate"></div>
-
             <div ng-if="event">
               <h4><div style="text-align:center;">{{event.name}}
               </div></h4>
@@ -32,8 +30,8 @@
               <div class="scores" id="tablesection" align="center">
                 <span ng-repeat="gamer in event.gamers">
                   <span class="playerlist">
-
-                    <table border="1" cellpadding="4" cellspacing="0" width="40%">
+                    <div class="event-totals">
+                    <table class="event-totals-table">
 
                       <thead>
                         <tr>
@@ -73,6 +71,7 @@
 
                       </tbody>
                     </table>
+                  </div>
                   </span>
                 </span>
               </div>
