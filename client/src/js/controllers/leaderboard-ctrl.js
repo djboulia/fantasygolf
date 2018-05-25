@@ -27,7 +27,7 @@ function LeaderboardCtrl($scope, $stateParams, $location, fantasy) {
 
           console.log("season: " + season.id);
           $scope.gamers = season.gamers;
-          $scope.events = season.events;
+          $scope.events = season.events.reverse();  // show most recent first
           $scope.name = season.name;
           $scope.gameid = gameid;
           $scope.tournamentUrl = tournamentUrl;

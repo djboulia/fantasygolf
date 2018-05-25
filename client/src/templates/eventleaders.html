@@ -31,7 +31,7 @@
                                     </tr>
                                 </thead>
                                 <tr ng-repeat="golfer in golfers">
-                                    <td class="text-center">{{$index+1}}</td>
+                                    <td class="text-center">{{golfer.pos}}</td>
                                     <td><a href="{{golferUrl + '/' + golfer.id}}">{{golfer.name}}</a></td>
                                     <td  class="text-center" style="border: 1px solid #cccccc;">{{golfer.total}}</td>
                                     <td ng-repeat="roundNumber in roundNumbers" class="text-center" style="border: 1px solid #cccccc;">

@@ -9,6 +9,9 @@ var rosterCache = new Cache(5); // 5 secs
  * 5 second cache to make sure multiple requests don't hit the
  * back in less than a second.
  *
+ * all get/put operations on the roster should go through the
+ * main Roster.Promise interface, which then uses this on the
+ * back end to cache results
  **/
 var RosterCache = function(Roster) {
 
@@ -67,6 +70,9 @@ var RosterCache = function(Roster) {
     });
   };
 
+  //
+  //  this updates our cache after writing through to the database
+  //
   this.update = function(roster) {
     return new Promise(function(resolve, reject) {
 
