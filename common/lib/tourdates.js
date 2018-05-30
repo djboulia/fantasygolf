@@ -111,6 +111,15 @@ function TourDates() {
     return (now.getTime() > start.getTime()) && (now.getTime() < end.getTime());
   };
 
+  this.tournamentInTheFuture = function(start) {
+    start = adjustedForTimezone(start);
+
+    console.log("tournamentInTheFuture: start: " +
+      dateTimeString(start) + " date: " + dateTimeString(now));
+
+    return now.getTime() < start.getTime();
+  };
+
   this.tournamentOpens = function(start) {
     start = adjustedForTimezone(start);
 

@@ -69,7 +69,7 @@
 
             <h4><div style="padding-left:10px;">Event Details</div></h4>
             <div ng-repeat="event in events">
-              <div class="scores" id="tablesection" align="center">
+              <div ng-hide="event.future" class="scores" id="tablesection" align="center">
                 <span class="playerlist">
 
                   <div class="event-totals">

@@ -2,8 +2,11 @@ var logger = require('../lib/logger.js');
 var TourDates = require('../lib/tourdates.js');
 var TourSeason = require('../lib/tourseason.js');
 var TourEvent = require('../lib/tourevent.js');
+var GameCache = require('../lib/gamecache.js');
 
 module.exports = function(Game) {
+
+  var gameCache = new GameCache(Game);
 
   var app = require('../../server/server');
 
@@ -80,34 +83,22 @@ module.exports = function(Game) {
       record.data.gamers = gamers;
       record.data.events = [];
 
-      Game.create(record, function(err, record) {
-        if (!err && record) {
-
-          logger.log("created game: " + record.id);
+      gameCache.create(record)
+        .then(function(record) {
 
           // initialize the roster after creating the
           // game record
           var Roster = app.models.Roster.Promise;
 
-          Roster.init(record.id).then(function(roster) {
-            resolve(record);
-          }, function(err) {
-            reject(err);
-          });
-
-        } else {
-          if (!record) {
-            var str = "Could not create game";
-            logger.error(str);
-            reject(str);
-          } else {
-            var str = "Error!" + JSON.stringify(err);
-            logger.error(str);
-            reject(str);
-          }
-        }
-      });
-
+          Roster.init(record.id)
+            .then(function(roster) {
+              resolve(record);
+            }, function(err) {
+              reject(err);
+            });
+        }, function(err) {
+          reject(err);
+        });
     });
   };
 
@@ -171,25 +162,10 @@ module.exports = function(Game) {
           game.data.gamers = gamers;
           game.data.events = events;
 
-          // now put the game back
-
-          Game.replaceOrCreate(game, function(err, record) {
-            if (!err && record) {
-
-              logger.log("updated game " + id);
+          return gameCache.update(game); // promise
+        })
+        .then(function(record) {
               resolve(record);
-
-            } else {
-              if (!record) {
-                var str = "Could not find game!";
-                reject(str);
-              } else {
-                var str = "Error!" + JSON.stringify(err);
-                reject(str);
-              }
-            }
-          });
-
         }, function(err) {
           reject(err);
         });
@@ -198,45 +174,11 @@ module.exports = function(Game) {
   };
 
   Game.Promise.findById = function(id) {
-    return new Promise(function(resolve, reject) {
-      Game.findById(id, function(err, record) {
-        if (!err && record) {
-
-          logger.log("Found game: " + JSON.stringify(record));
-
-          resolve(record);
-
-        } else {
-          if (err) {
-            var str = "Error!" + JSON.stringify(err);
-            logger.error(str);
-            reject(str);
-          } else {
-            var str = "Could not find game id " + id;
-            logger.error(str);
-            reject(str);
-          }
-        }
-      });
-
-    });
+    return gameCache.findById(id);
   };
 
   Game.Promise.find = function() {
-    return new Promise(function(resolve, reject) {
-      Game.find(function(err, records) {
-        if (!err) {
-
-          resolve(records);
-
-        } else {
-          var str = "Error!" + JSON.stringify(err);
-          logger.error(str);
-          reject(str);
-        }
-      });
-
-    });
+    return gameCache.find();
   };
 
   //
@@ -565,41 +507,51 @@ module.exports = function(Game) {
           event.start = json.start;
           event.end = json.end;
 
+          var tourDates = new TourDates();
+
+          // flag future tournaments so the UI can decide whether to show them
+          if (tourDates.tournamentInTheFuture(event.start)) {
+            console.log("event " + event.name + " is a future tournament");
+            event.future = true;
+          }
+
           if (event.gamers) {
             for (var g = 0; g < event.gamers.length; g++) {
               var gamer = event.gamers[g];
 
               var picks = gamer.picks;
-              for (var p = 0; p < picks.length; p++) {
-                var pick = picks[p];
 
-                var score = findScoreByPlayerId(json.scores, pick.id);
+              if (picks) {
+                for (var p = 0;  p < picks.length; p++) {
+                  var pick = picks[p];
 
-                if (score) {
-                  pick.name = score.name;
-                  pick.score_details = score.score_details;
+                  var score = findScoreByPlayerId(json.scores, pick.id);
 
-                  //                  console.log("found picks " + JSON.stringify(pick));
-                } else {
-                  // no scores for this player, just update the pick name from our roster
-                  // this indicates someone started a player who wasn't in the field
-                  console.log("didn't find scores for " + pick.id);
+                  if (score) {
+                    pick.name = score.name;
+                    pick.score_details = score.score_details;
 
-                  var player = findPlayerInRoster(roster, pick.id);
-
-                  if (player) {
-                    pick.name = player.name;
-                    pick.score_details = {
-                      total: 0
-                    };
+                    //                  console.log("found picks " + JSON.stringify(pick));
                   } else {
-                    console.log("Couldn't find player " + pick.id + " in roster.");
+                    // no scores for this player, just update the pick name from our roster
+                    // this indicates someone started a player who wasn't in the field
+                    console.log("didn't find scores for " + pick.id);
+
+                    var player = findPlayerInRoster(roster, pick.id);
+
+                    if (player) {
+                      pick.name = player.name;
+                      pick.score_details = {
+                        total: 0
+                      };
+                    } else {
+                      console.log("Couldn't find player " + pick.id + " in roster.");
+                    }
                   }
                 }
               }
 
             }
-
           }
 
           resolve(event);
@@ -633,7 +585,7 @@ module.exports = function(Game) {
           //        console.log("search for gamerid " + gamerid + " : " + JSON.stringify(games));
 
           if (details) {
-            // add in season detailsfor each game
+            // add in season details for each game
             addActiveSeasons(games, function(games) {
               resolve(games);
             });
@@ -680,15 +632,17 @@ module.exports = function(Game) {
   var picksTotal = function(gamer) {
     var gamerTotal = 0;
 
-    for (var p = 0; p < gamer.picks.length; p++) {
-      var pick = gamer.picks[p];
+    if (gamer.picks) {
+      for (var p = 0; p < gamer.picks.length; p++) {
+        var pick = gamer.picks[p];
 
-      if (pick.score_details && !isNaN(pick.score_details.total)) {
-        gamerTotal += pick.score_details.total;
-      } else {
-        console.error("ERROR: could not get total for picks.score_details" + JSON.stringify(pick.score_details));
+        if (pick.score_details && !isNaN(pick.score_details.total)) {
+          gamerTotal += pick.score_details.total;
+        } else {
+          console.error("ERROR: could not get total for picks.score_details" + JSON.stringify(pick.score_details));
+        }
+        console.log("gamerTotal = " + gamerTotal);
       }
-      console.log("gamerTotal = " + gamerTotal);
     }
 
     return gamerTotal;
@@ -924,26 +878,28 @@ module.exports = function(Game) {
                   // matches the roster. if not, remove the pick
                   var newPicks = [];
 
-                  for (var p = 0; p < gamer.picks.length; p++) {
-                    var pick = gamer.picks[p];
+                  if (gamer.picks) {
+                    for (var p = 0; p < gamer.picks.length; p++) {
+                      var pick = gamer.picks[p];
 
-                    var rosterEntry = Roster.findPlayer(pick.id, roster);
+                      var rosterEntry = Roster.findPlayer(pick.id, roster);
 
-                    if (!rosterEntry) {
-                      // this shouldn't happen...
-                      console.log("WARNING: didn't find pick " + pick.id + " in roster... removing.");
-                      changed = true;
-                    } else if (rosterEntry && rosterEntry.gamer == gamer.id) {
-                      // still owned by this player, we're good
-                      newPicks.push(pick);
-                    } else {
-                      console.log("found a pick " + pick.id + " no longer owned by this gamer, removing " + JSON.stringify(rosterEntry));
-                      changed = true;
+                      if (!rosterEntry) {
+                        // this shouldn't happen...
+                        console.log("WARNING: didn't find pick " + pick.id + " in roster... removing.");
+                        changed = true;
+                      } else if (rosterEntry && rosterEntry.gamer == gamer.id) {
+                        // still owned by this player, we're good
+                        newPicks.push(pick);
+                      } else {
+                        console.log("found a pick " + pick.id + " no longer owned by this gamer, removing " + JSON.stringify(rosterEntry));
+                        changed = true;
+                      }
                     }
-                  }
 
-                  // update picks for this gamer
-                  gamer.picks = newPicks;
+                    // update picks for this gamer
+                    gamer.picks = newPicks;
+                  }
 
                 }
               }
@@ -953,21 +909,12 @@ module.exports = function(Game) {
                 console.log("made changes, updating game record");
                 console.log("game record " + JSON.stringify(record));
 
-                Game.replaceOrCreate(record, function(err, record) {
-                  if (!err && record) {
-
+                gameCache.update(record)
+                .then( function(record) {
                     logger.log("updated game " + gameid);
                     resolve(record);
-
-                  } else {
-                    if (!record) {
-                      var str = "Could not find game!";
-                      reject(str);
-                    } else {
-                      var str = "Error!" + JSON.stringify(err);
-                      reject(str);
-                    }
-                  }
+                }, function(err) {
+                  reject(err);
                 });
 
               } else {

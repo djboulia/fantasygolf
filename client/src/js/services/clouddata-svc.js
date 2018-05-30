@@ -423,6 +423,7 @@ angular.module('GolfPicks.cloud', [])
     var fantasyEvent = function(event) {
       this.id = event.id;
       this.name = event.name;
+      this.future = event.future;
 
       var gamers = event.gamers;
       var gamerArray = [];
