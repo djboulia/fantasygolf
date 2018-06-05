@@ -62,7 +62,11 @@
                         <h3><div>{{eventName}}</div></h3>
                     </div>
 
-                    <div class="table-responsive">
+                    <div ng-show="!players.length">
+                      Tour player information not yet available for this tournament.
+                    </div>
+
+                    <div ng-show="players.length" class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
@@ -71,8 +75,8 @@
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
 
+                            <tbody>
                               <tr ng-hide="!picksMessage">
                                   <td class="text-center" colspan="3">
                                       <div class="status" ng-bind-html="picksMessage"></div>
