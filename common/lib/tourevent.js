@@ -5,7 +5,9 @@ var logger = require('../lib/logger.js');
 // pos is a string either with the golfer's place in the tournament (1,2,3) or their
 // status if they are no longer in the tournament: CUT, WD, DNS
 //
-var comparePosition = function(a, b) {
+var comparePosition = function(golfer1, golfer2) {
+  var a = golfer1.pos;
+  var b = golfer2.pos;
 
   if (a == b) {
     return 0;
@@ -20,20 +22,26 @@ var comparePosition = function(a, b) {
     b = b.slice(1);
   }
 
-  if (ScoreCard.isValidScore(a) && ScoreCard.isValidScore(b)) {
+  // first see if our position is a number.  if so, sort that way
+  if (ScoreCard.isNumber(a) && ScoreCard.isNumber(b)) {
     return parseInt(a) - parseInt(b);
-  } else if (ScoreCard.isValidScore(a)) {
+  } else if (ScoreCard.isNumber(a)) {
     return -1;
-  } else if (ScoreCard.isValidScore(b)) {
+  } else if (ScoreCard.isNumber(b)) {
     return 1;
   } else {
-    // neither are numbers, so compare strings
+    // neither are numbers, options are CUT, MDF, DNS
 
     // DNS = Did Not Start... always sort these to the bottom
     if (a == "DNS") {
       return 1;
     } else if (b == "DNS") {
       return -1;
+    }
+
+    // CUT is next
+    if (a == "CUT" && b == "CUT") {
+
     }
 
     // last resort, just compare strings
@@ -226,7 +234,7 @@ exports.format = function(record) {
   var lowRounds = [];
 
   for (var i = 0; i < NUMBER_OF_ROUNDS; i++) {
-    roundNumbers.push(i+1);
+    roundNumbers.push(i + 1);
     lowRounds[i] = "-";
   }
 
@@ -256,38 +264,27 @@ exports.format = function(record) {
         }
       } else {
 
-        // sort lowest round total
-        golfers.sort(function(a, b) {
-          var aScore = a[roundNumber];
-          var bScore = b[roundNumber];
+        // find the low score for this round
 
-          if (isNaN(aScore)) {
-            return 1;
-          } else if (isNaN(bScore)) {
-            return -1;
+        for (var g = 0; g < golfers.length; g++) {
+          var golfer = golfers[g];
+          var score = golfer[roundNumber];
+
+          if (ScoreCard.isNumber(score)) {  // valid score, see if it is the lowest we've seen
+            if (lowRounds[i] == "-") {
+              lowRounds[i] = score;   // first score, take it
+            } else if (score < lowRounds[i]) {
+              lowRounds[i] = score; // lower then our previous score, take it
+            }
           }
+        }
 
-          return aScore - bScore;
-        });
-
-        // first element is low score
-        lowRounds[i] = golfers[0][roundNumber];
       }
 
     }
 
-    //                            console.log("golfers after = " + JSON.stringify(golfers, null, 2));
-
-    var roundNumber = new String(currentRound + 1);
-
-
-
-//    console.log("Golfers: " + JSON.stringify(golfers));
-
-    // sort by position
-    golfers.sort(function(a, b) {
-      return comparePosition(a.pos, b.pos);
-    });
+    //    console.log("golfers after = " + JSON.stringify(golfers, null, 2));
+    //    console.log("Golfers: " + JSON.stringify(golfers));
 
   }
 
@@ -303,18 +300,18 @@ exports.format = function(record) {
 };
 
 exports.formatGolferScore = function(golferid, record) {
-    var golfer = null;
-    var scores = record.scores;
+  var golfer = null;
+  var scores = record.scores;
 
-    for (var i=0; i<scores.length; i++) {
-      var score = scores[i];
+  for (var i = 0; i < scores.length; i++) {
+    var score = scores[i];
 
-      if (score.id == golferid) {
-        // format the scoring information here
+    if (score.id == golferid) {
+      // format the scoring information here
 
-        golfer = score;
-      }
+      golfer = score;
     }
+  }
 
-    return golfer;
+  return golfer;
 };
