@@ -26,8 +26,7 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
     this.dateOptions.minDate = this.start;
   };
 
-  $scope.dateFormat = "MMM dd ',' yyyy";
-  $scope.altInputFormats = ['M!/d!/yyyy'];
+  var dateFormat = "MMM dd ',' yyyy";
 
   var findEventById = function(id, schedule) {
     for (var i = 0; i < schedule.length; i++) {
@@ -40,6 +39,18 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
 
     return null;
   };
+
+var formatDates = function(schedule) {
+  for (var i=0; i<schedule.length; i++) {
+    var event = schedule[i];
+
+    var start = new Date(event.startDate);
+    event.startDateString = start.toDateString();
+
+    var end = new Date(event.endDate);
+    event.endDateString = end.toDateString();
+  }
+};
 
   //
   // take the full schedule and pre-select any events already
@@ -115,6 +126,8 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
 
         $scope.fullSchedule = selectedSchedule;
 
+        formatDates($scope.fullSchedule);
+
         return fantasy.getAllGamers(); // promise
       })
       .then(function(gamers) {
@@ -144,6 +157,8 @@ function GameCtrl($scope, $stateParams, $uibModal, $cookieStore, fantasy) {
         console.log("loaded full season schedule");
 
         $scope.fullSchedule = schedule.get();
+
+        formatDates($scope.fullSchedule);
 
         return fantasy.getAllGamers(); // promise
       })
