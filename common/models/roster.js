@@ -55,8 +55,201 @@ var RosterEntry = {
     newPlayer.draft_round = null;
 
     return newPlayer;
+  },
+
+  diff: function(obj1, obj2) {
+    // compare the two objects and return an object with the elements that are different
+    var diffs = {};
+
+    for (var property in obj1) {
+      if (obj1[property] != obj2[property]) {
+        diffs[property] = [obj1[property], obj2[property]];
+      }
+    }
+
+    return diffs;
   }
 
+};
+
+var findGamerById = function(id, gamers) {
+  for (var i = 0; i < gamers.length; i++) {
+    var gamer = gamers[i];
+
+    if (gamer && (id == gamer.id)) {
+      return gamer;
+    }
+  }
+
+  return null;
+};
+
+//
+// this class encapsulates all actions on a Transaction
+//
+var Transaction = {
+  MODIFY: "modify",
+  ADD: "add",
+
+  isAdd: function(record) {
+    if (record.action != this.MODIFY) {
+      return false;
+    }
+
+    var diffs = RosterEntry.diff(record.before, record.after);
+
+    if (diffs.gamer) {
+      // gamer changed, see if it is an add (goes from null to not null)
+      var gamers = diffs.gamer;
+      if (gamers[0] == null && gamers[1] != null) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  isDrop: function(record) {
+    if (record.action != this.MODIFY) {
+      return false;
+    }
+
+    var diffs = RosterEntry.diff(record.before, record.after);
+    console.log("isDrop: diffs:" + JSON.stringify(diffs));
+
+    if (diffs.gamer) {
+      // gamer changed, see if it is a drop (goes from not null to null)
+      var gamers = diffs.gamer;
+      if (gamers[0] != null && gamers[1] == null) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  isTrade: function(record) {
+    if (record.action != this.MODIFY) {
+      return false;
+    }
+
+    var diffs = RosterEntry.diff(record.before, record.after);
+
+    if (diffs.gamer) {
+      // gamer changed, see if it is a trade (goes from not null to not null)
+      var gamers = diffs.gamer;
+      if (gamers[0] != null && gamers[1] != null) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  createModifyRecord: function(transactionId, time, gamerid, current, next) {
+    var data = {
+      action: this.MODIFY,
+      transactionId: transactionId,
+      when: time,
+      who: gamerid,
+      before: current,
+      after: next
+    };
+
+    return data;
+  },
+
+  createAddRecord: function(transactionId, time, gamerid, player) {
+    var data = {
+      action: this.ADD,
+      transactionId: transactionId,
+      when: time,
+      who: gamerid,
+      record: player
+    };
+
+    return data;
+  },
+
+  // look at a Transaction and figure out a reasonable outcome
+  // modify records -> add/drop
+  // add records -> add
+  parse: function(gamers, record) {
+
+    if (record.action == this.MODIFY) {
+      if (this.isDrop(record)) {
+        var result = { action: "drop"};
+        var gamer = findGamerById(record.before.gamer, gamers);
+
+        result.gamer = gamer;
+        result.player = {
+          id : record.after.player_id,
+          name: record.after.name
+        };
+
+        return result;
+      } else if (this.isAdd(record)) {
+        var result = { action: "add"};
+        var gamer = findGamerById(record.after.gamer, gamers);
+
+        result.gamer = gamer;
+        result.player = {
+          id : record.after.player_id,
+          name: record.after.name
+        };
+
+        return result;
+      } else if (this.isTrade(record)) {
+        var result = { action: "trade"};
+        var gamer = findGamerById(record.after.gamer, gamers);
+
+        result.gamer = gamer;
+        result.player = {
+          id : record.after.player_id,
+          name: record.after.name
+        };
+
+        return result;
+      } else {
+        // unknown .. not good
+        var result = { action: "unknown"};
+        var gamer = findGamerById(record.after.gamer, gamers);
+
+        result.gamer = gamer;
+        result.player = {
+          id : record.after.player_id,
+          name: record.after.name
+        };
+
+        var str = "unknown modify action " + JSON.stringify(record);
+        console.error(str);
+
+        return result;
+      }
+    } else if (record.action == this.ADD) {
+      var result = { action: "add"};
+      var gamer = findGamerById(record.record.gamer, gamers);
+
+      result.gamer = gamer;
+      result.player = {
+        id : record.record.player_id,
+        name: record.record.name
+      };
+
+      return result;
+    } else {
+      // unknown action... not good
+      var result = { action: "unknown"};
+      var gamer = findGamerById(record.record.gamer, gamers);
+
+      result.gamer = gamer;
+
+      var str = "unknown transaction type " + JSON.stringify(record);
+      console.error(str);
+
+      return result;
+    }
+  }
 };
 
 //
@@ -65,30 +258,25 @@ var RosterEntry = {
 //
 var RosterHistory = function(gamerid, history) {
 
+  var transactionId = new Date().getTime();
+
   this.modify = function(current, next) {
-      var data = {
-        action: "modify",
-        who: gamerid,
-        before: current,
-        after: next
-      };
 
-      history.push(data);
+    var data = Transaction.createModifyRecord(transactionId, transactionId, gamerid, current, next);
 
-      return data;
-    },
+    history.push(data);
 
-    this.add = function(player) {
-      var data = {
-        action: "add",
-        who: gamerid,
-        record: player
-      };
+    return data;
+  };
 
-      history.push(data);
+  this.add = function(player) {
 
-      return data;
-    }
+    var data = Transaction.createAddRecord(transactionId, transactionId, gamerid, player);
+
+    history.push(data);
+
+    return data;
+  };
 };
 
 module.exports = function(Roster) {
@@ -326,6 +514,35 @@ module.exports = function(Roster) {
     });
   };
 
+  var getTransactionHistory = function(gamers, transactions) {
+    var history = {};
+
+    console.log("transactions " + JSON.stringify(transactions));
+    
+    for (var i = 0; i < transactions.length; i++) {
+      var transaction = transactions[i];
+      var id = transaction.transactionId;
+
+      var who = findGamerById(transaction.who, gamers);
+
+      var record = Transaction.parse(gamers, transaction);
+
+      if (!history[id]) {
+        history[id] = {
+          who: who,
+          when: transaction.when,
+          actions : []
+        };
+      }
+
+      history[id].actions.push(record);
+    }
+
+    console.log("history " +JSON.stringify(history));
+
+    return history;
+  };
+
   //
   // get the roster with some basic game info and gamer names added
   //
@@ -345,6 +562,14 @@ module.exports = function(Roster) {
         Gamer.findGamerNames(gamers).then(function(obj) {
           roster.data.gamers = game.data.gamers;
 
+          console.log("adding transaction history for roster " + roster.id + ": " + JSON.stringify(roster.data.transactions));
+
+          // go through the roster transactions and build up a readable history
+          var transactions = roster.data.transactions;
+          var history = getTransactionHistory(roster.data.gamers, transactions);
+
+          roster.data.transactions = history;
+
           resolve(roster);
         }, function(err) {
           reject(err);
@@ -353,6 +578,27 @@ module.exports = function(Roster) {
       }, function(err) {
         reject(err);
       });
+
+    });
+  };
+
+  //
+  // get the roster history for this game
+  //
+  Roster.Promise.findByGameIdTransactions = function(gameid) {
+    console.log("in Roster.Promise.findByGameIdTransactions");
+
+    return new Promise(function(resolve, reject) {
+
+      Roster.Promise.findByGameIdWithDetails(gameid)
+        .then(function(obj) {
+          var gamers = obj.data.gamers;
+          var transactions = obj.data.transactions;
+
+          resolve(transactions);
+        }, function(err) {
+          reject(err);
+        });
 
     });
   };

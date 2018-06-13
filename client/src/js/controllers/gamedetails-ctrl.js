@@ -3,6 +3,7 @@ angular.module('CloudApp')
 
 function GameDetailsCtrl($scope, $stateParams, $cookieStore, $location, $sanitize, currentUser, fantasy) {
 
+  var draftUrl = "#/draft/id";
   var tournamentUrl = "#/eventleaders/id/eventid";
   var leaderboardUrl = "#/leaderboard";
   var freeAgentsUrl = "#/roster/id/available";
@@ -38,7 +39,7 @@ function GameDetailsCtrl($scope, $stateParams, $cookieStore, $location, $sanitiz
         // setting picks
         if (testingMode && activeSeason) {
           console.log("testingMode enabled, allowing picks to be set");
-          
+
           if (activeSeason.nextEvent) {
             activeSeason.nextEvent.canSetPicks = true;
             activeSeason.nextEvent.inProgress = false;
@@ -58,6 +59,7 @@ function GameDetailsCtrl($scope, $stateParams, $cookieStore, $location, $sanitiz
         $scope.tournamentUrl = tournamentUrl;
         $scope.eventDetailsUrl = eventDetailsUrl;
         $scope.freeAgentsUrl = freeAgentsUrl;
+        $scope.draftUrl = draftUrl;
         $scope.picksUrl = picksUrl;
         $scope.gameHistory = seasons.getPriorSeasons();
         $scope.loaded = true;

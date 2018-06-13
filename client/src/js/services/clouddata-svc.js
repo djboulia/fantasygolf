@@ -451,6 +451,7 @@ angular.module('GolfPicks.cloud', [])
       this.event = roster.data.event;
       this.gamers = roster.data.gamers;
       this.players = roster.data.roster;
+      this.transactions = roster.data.transactions;
     };
 
     var fantasySeason = function(game) {

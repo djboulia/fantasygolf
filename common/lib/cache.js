@@ -28,15 +28,18 @@ var Cache = function(ttl) {
             console.log("no cache entry for " + key);
         }
 
-        return data;
+        // make a copy of the returned value
+        return JSON.parse(JSON.stringify(data));
     };
 
     this.put = function(key, obj) {
         if (obj) {
             console.log("setting cache entry for " + key);
 
+            var copy = JSON.parse(JSON.stringify(obj));
+
             this.cache[key] = {
-                "data": obj,
+                "data": copy,
                 "timestamp": Date.now()
             };
         } else {

@@ -1,4 +1,4 @@
-<div ng-controller="RosterCtrl">
+<div ng-controller="DraftCtrl">
 
     <div class="row">
 
@@ -23,23 +23,59 @@
 
             <rd-loading ng-hide="loaded"></rd-loading>
             <rd-widget ng-show="loaded">
-                <rd-widget-header icon="fa-user" title="Roster Update for {{name}}">
-                  <a href="{{editUrl}}">Add Player</a><br/>
-                  <a href="{{transactionsUrl}}">Transaction History</a>
+                <rd-widget-header icon="fa-user" title="Draft Room for {{name}}">
+                  <span ng-show="editable">
+                    <a href="{{editUrl}}">Add Player</a><br/>
+                  </span>
                 </rd-widget-header>
                 <rd-widget-body classes="no-padding">
 
                     <div class="instructions">
                         <h3><div>{{name}}</div></h3>
-                        <div>Press 'Save' at the bottom when finished.</div>
+                        <div ng-show="editable">Press 'Save' at the bottom when finished.</div>
                     </div>
 
-                    <div class="table-responsive">
+                    <!-- show this table for non admins -->
+                    <div ng-show="!editable" class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Player</th>
-                                    <th>Owner</th>
+                                    <th>Drafted By</th>
+                                    <th>Round</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                <tr ng-repeat="player in players">
+                                    <td>
+                                        <div>{{player.name}}</div>
+                                    </td>
+                                    <td>
+                                      <div>{{player.selectedGamer.name}}</div>
+                                    </td>
+                                    <td>
+                                      <div>{{player.selectedRound}}</div>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="text-center" colspan="3">
+                                        <div class="status" ng-bind-html="picksMessage"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- show this table for admins to update draft data -->
+                    <div ng-show="editable" class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Drafted By</th>
+                                    <th>Round</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -50,6 +86,11 @@
                                     </td>
                                     <td>
                                       <select ng-click="updatePlayer(player);" ng-model="player.selectedGamer" ng-options="x.name for x in gamers">
+
+                                      </select>
+                                    </td>
+                                    <td>
+                                      <select ng-click="updateRound(player);" ng-model="player.selectedRound" ng-options="x for x in rounds">
 
                                       </select>
                                     </td>
@@ -67,8 +108,7 @@
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                </rd-widget-body>
+                    </div>                </rd-widget-body>
                 <rd-widget>
         </div>
     </div>

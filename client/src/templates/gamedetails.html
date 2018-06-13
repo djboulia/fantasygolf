@@ -5,11 +5,13 @@
       <rd-loading ng-hide="loaded"></rd-loading>
       <rd-widget ng-show="loaded">
         <rd-widget-header icon="fa-trophy" title="{{username}}">
+          <div><a ng-href="{{draftUrl}}/{{activeSeason.id}}">Draft Room</a>
+          </div>
         </rd-widget-header>
         <rd-widget-body classes="small no-padding">
           <div ng-if="activeSeason" class="table-responsive">
             <h4 style="text-align:center">{{activeSeason.name}}</h4>
-            <div style="text-align:center"><a ng-href="{{leaderboardUrl}}/id/{{activeSeason.id}}">Season Leaderboard</a>
+              <div style="text-align:center"><a ng-href="{{leaderboardUrl}}/id/{{activeSeason.id}}">Season Leaderboard</a>
           </div>
             <table class="table">
               <tbody id="nextevent">

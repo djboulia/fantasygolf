@@ -228,6 +228,27 @@ module.exports = function(Fantasy) {
   );
 
   Fantasy.remoteMethod(
+    'getRosterTransactions', {
+      http: {
+        path: '/:id/roster/transactions',
+        verb: 'get'
+      },
+      description: 'Get transactions for roster in this game',
+
+      accepts: [{
+        arg: 'id',
+        type: 'string',
+        required: true
+      }],
+      returns: {
+        arg: 'transactions',
+        type: 'object',
+        root: true
+      }
+    }
+  );
+
+  Fantasy.remoteMethod(
     'getEventRoster', {
       http: {
         path: '/:id/roster/event/:eventid',
@@ -662,6 +683,33 @@ module.exports = function(Fantasy) {
 
         cb(null, {
           "roster": roster
+        });
+
+      }, function(err) {
+        errCallback(err, cb);
+      });
+
+  };
+
+  /**
+   * /:id
+   *
+   * id is the game to get this roster history for
+   *
+   * returns the transaction history on the roster for this game
+   *
+   **/
+  Fantasy.getRosterTransactions = function(id, cb) {
+
+    var Roster = app.models.Roster.Promise;
+
+    console.log("getting roster history for game " + id);
+
+    Roster.findByGameIdTransactions(id)
+      .then(function(transactions) {
+
+        cb(null, {
+          "transactions": transactions
         });
 
       }, function(err) {

@@ -1,11 +1,11 @@
 angular.module('CloudApp')
-  .controller('RosterCtrl', ['$scope', '$stateParams', '$cookieStore',
+  .controller('DraftCtrl', ['$scope', '$stateParams', '$cookieStore',
     '$location', '$sanitize', 'cloudDataCurrentUser',
-    'cdFantasy', RosterCtrl
+    'cdFantasy', DraftCtrl
   ]);
 
 
-function RosterCtrl($scope, $stateParams, $cookieStore,
+function DraftCtrl($scope, $stateParams, $cookieStore,
   $location, $sanitize, currentUser, fantasy) {
 
   var changed = false;
@@ -15,7 +15,7 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
   var editUrl = '#/rosteredit/id/player/';
   var transactionsUrl = '#/rostertrans/id/';
 
-  console.log("reached roster controller with event id " + gameid);
+  console.log("reached draft controller with event id " + gameid);
 
   var testingMode = $location.search().testingMode ? true : false;
   console.log("testingMode is set to " + testingMode);
@@ -62,6 +62,20 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
     return null;
   }
 
+  var sortPlayers = function(players) {
+    players.sort(function(a, b) {
+      if (a.draft_round == null && b.draft_round == null) {
+        return 0;
+      } else if (a.draft_round == null) {
+        return 1;
+      } else if (b.draft_round == null) {
+        return -1;
+      } else {
+        return a.draft_round - b.draft_round;
+      }
+    })
+  };
+
   // get the event information
   if (gameid) {
 
@@ -72,19 +86,31 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
       .then(function(roster) {
           roster.gamers.unshift({
             "id": null,
-            "name": "Free Agent"
+            "name": "Undrafted"
           });
 
           for (var i = 0; i < roster.players.length; i++) {
             var player = roster.players[i];
 
-            var gamer = findGamer(roster.gamers, player.gamer);
+            var gamer = findGamer(roster.gamers, player.drafted_by);
             player.selectedGamer = gamer;
+            player.selectedRound = (player.draft_round == null) ? "None" : player.draft_round;
           }
 
+          sortPlayers(roster.players);
+
+          var rounds = [];
+          rounds.push("None");
+
+          for (var i = 0; i < 13; i++) {
+            rounds.push(i + 1);
+          }
+
+          $scope.editable = currentUser.isAdmin();
           $scope.name = roster.game.name;
           $scope.players = roster.players;
           $scope.gamers = roster.gamers;
+          $scope.rounds = rounds;
 
           $scope.loaded = true;
         },
@@ -101,10 +127,24 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
     console.log("clicked on item " + item.name + " selected gamer " + JSON.stringify(item.selectedGamer));
     item.changed = true;
     item.gamer = item.selectedGamer.id;
+    item.drafted_by = item.selectedGamer.id;
 
     $scope.picksMessage = "";
 
     $scope.canSubmit = true;
+  }
+
+  $scope.updateRound = function(item) {
+    //			console.log("item: " + JSON.stringify(item));
+    console.log("clicked on item " + item.name);
+    item.changed = true;
+    item.draft_round = (item.selectedRound == "None") ? null : item.selectedRound;
+
+    $scope.picksMessage = "";
+
+    $scope.canSubmit = true;
+
+    console.log("item state now " + JSON.stringify(item));
   }
 
   $scope.submit = function() {
@@ -125,7 +165,10 @@ function RosterCtrl($scope, $stateParams, $cookieStore,
     if (changed.length > 0) {
       fantasy.updateRoster(gameid, currentUser, changed)
         .then(function(roster) {
-            $scope.picksMessage = "Roster saved.";
+            $scope.$apply(function() {
+              $scope.picksMessage = "Roster saved.";
+              sortPlayers($scope.players);
+            })
           },
           function(err) {
             console.error("Couldn't access roster!");

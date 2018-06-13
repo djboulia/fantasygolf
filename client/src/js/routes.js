@@ -97,6 +97,12 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 label: 'Roster',
                 crumbs: 'Home / Games / Roster'
             })
+            .state('rostertrans/id', {
+                url: '/rostertrans/id/:id',
+                templateUrl: 'templates/rostertrans.html',
+                label: 'Roster Transactions',
+                crumbs: 'Home / Games / Roster / Transactions'
+            })
             .state('roster/id/available', {
                 url: '/roster/id/available/:id',
                 templateUrl: 'templates/rosterfa.html',
@@ -114,6 +120,12 @@ angular.module('CloudApp').config(['$stateProvider', '$routeProvider', '$urlRout
                 templateUrl: 'templates/rosteredit.html',
                 label: 'Roster Edit',
                 crumbs: 'Home / Games / Roster Edit'
+            })
+            .state('draft/id', {
+                url: '/draft/id/:id',
+                templateUrl: 'templates/draft.html',
+                label: 'Draft Room',
+                crumbs: 'Home / Games / Draft Room'
             })
             .state('picks/id/event', {
                 url: '/picks/id/event/:id/:eventid',

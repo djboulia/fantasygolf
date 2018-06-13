@@ -1,0 +1,67 @@
+<div ng-controller="RosterTransCtrl">
+
+  <div class="row">
+
+    <div class="col-lg-6">
+      <rd-widget ng-show="errorMessage">
+        <rd-widget-body classes="small no-padding">
+
+          <div class="table-responsive">
+            <table class="table">
+              <tbody>
+                <tr>
+                  <td class="text-center" colspan="2">
+                    <div class="status" ng-bind-html="errorMessage"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </rd-widget-body>
+      </rd-widget>
+
+      <rd-loading ng-hide="loaded"></rd-loading>
+      <rd-widget ng-show="loaded">
+        <rd-widget-header icon="fa-user" title="Roster History for {{game}}">
+        </rd-widget-header>
+        <rd-widget-body classes="no-padding">
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Owner</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr ng-repeat="transaction in transactions">
+                  <td>
+                    <div>{{transaction.who.name}}</div>
+                  </td>
+                  <td>
+                    <table class="table">
+                      <tr ng-repeat="item in transaction.actions">
+                        <td>{{item.action}}</td>
+                        <td>{{item.gamer.name}}</td>
+                        <td>{{item.player.name}}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="text-center" colspan="3">
+                    <div class="status" ng-bind-html="picksMessage"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </rd-widget-body>
+        <rd-widget>
+    </div>
+  </div>
+</div>
