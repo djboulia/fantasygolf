@@ -507,6 +507,10 @@ module.exports = function(Roster) {
           return Game.resolveRosterUpdate(gameid, roster); // promise
         })
         .then(function(game) {
+          // now go fetch the record and return the fluffed up version
+          return Roster.Promise.findByGameIdWithDetails(gameid); // promise
+        })
+        .then(function(roster) {
           resolve(roster);
         }, function(err) {
           reject(err);
@@ -518,7 +522,7 @@ module.exports = function(Roster) {
     var history = {};
 
     console.log("transactions " + JSON.stringify(transactions));
-    
+
     for (var i = 0; i < transactions.length; i++) {
       var transaction = transactions[i];
       var id = transaction.transactionId;

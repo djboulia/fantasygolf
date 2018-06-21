@@ -73,7 +73,9 @@ function DraftCtrl($scope, $stateParams, $cookieStore,
       } else {
         return a.draft_round - b.draft_round;
       }
-    })
+    });
+
+    return players;
   };
 
   // get the event information
@@ -165,10 +167,10 @@ function DraftCtrl($scope, $stateParams, $cookieStore,
     if (changed.length > 0) {
       fantasy.updateRoster(gameid, currentUser, changed)
         .then(function(roster) {
-            $scope.$apply(function() {
-              $scope.picksMessage = "Roster saved.";
-              sortPlayers($scope.players);
-            })
+          console.log("Roster saved.");
+           $scope.picksMessage = "Roster saved.";
+
+           $scope.players = roster.players;
           },
           function(err) {
             console.error("Couldn't access roster!");

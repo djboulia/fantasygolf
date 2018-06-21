@@ -793,7 +793,9 @@ module.exports = function(Fantasy) {
     Roster.update(id, gamerid, players)
     .then(function(roster) {
 
-      cb(null, roster);
+      cb(null, {
+        "roster": roster
+      });
 
     }, function(err) {
       errCallback(err, cb);

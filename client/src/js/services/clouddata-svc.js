@@ -688,7 +688,7 @@ angular.module('GolfPicks.cloud', [])
           function(obj) {
             console.log("updated roster");
             console.log(JSON.stringify(obj));
-            deferred.resolve(obj);
+            deferred.resolve(new fantasyRoster(obj.roster));
           },
           function(err) {
             deferred.reject({
