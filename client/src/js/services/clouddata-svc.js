@@ -405,6 +405,7 @@ angular.module('GolfPicks.cloud', [])
     var fantasyGamer = function(gamer) {
       this.total = gamer.total;
       this.name = gamer.name;
+      this.id = gamer.id;
 
       var picks = gamer.picks;
       var picksArray = [];

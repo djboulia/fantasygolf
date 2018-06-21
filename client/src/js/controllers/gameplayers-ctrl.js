@@ -1,59 +1,75 @@
 angular.module('CloudApp')
-    .controller('GamePlayersCtrl', ['$scope', '$stateParams', 'gameData', GamePlayersCtrl]);
+  .controller('GamePlayersCtrl', ['$scope', '$stateParams', 'cdFantasy', GamePlayersCtrl]);
 
-function GamePlayersCtrl($scope, $stateParams, gameData) {
+function GamePlayersCtrl($scope, $stateParams, fantasy) {
 
-    console.log("reached game controller with id " + $stateParams.id);
+  console.log("reached gameplayers controller with id " + $stateParams.id);
 
-    if ($stateParams.id) {
+  var findGamerPicks = function(gamer, gamers) {
 
-        gameData.loadGameWithGamers($stateParams.id)
-            .then(function (result) {
-                    var game = result.game;
-                    var gamerMap = result.gamerMap;
+    console.log("gamers: " + JSON.stringify(gamers));
 
-                    // see which gamers have made their picks
-                    var picks = [];
-                    var nopicks = [];
+    for (var i=0; i<gamers.length; i++) {
 
-                    for (var i = 0; i < game.gamers.length; i++) {
-                        var gamer = game.gamers[i];
+      event_gamer = gamers[i];
 
-                        if (gamer.picks) {
-                            picks.push(gamerMap[gamer.user]);
+      if (gamer.id == event_gamer.id) {
 
-                            //remove it from the list
-                            delete gamerMap[gamer.user];
-                        }
-                    }
+        console.log("found a match : " + JSON.stringify(event_gamer));
 
-                    console.log("remaining players " + JSON.stringify(gamerMap));
-
-                    // the remaining objects in the list are folks who haven't
-                    // yet made their picks
-                    for (var prop in gamerMap) {
-                        nopicks.push(gamerMap[prop]);
-                    }
-
-                    console.log("picks: " + JSON.stringify(picks));
-                    console.log("nopicks: " + JSON.stringify(nopicks));
-
-                    $scope.name = game.name;
-                    $scope.start = game.start;
-                    $scope.end = game.end;
-                    $scope.picks = picks;
-                    $scope.nopicks = nopicks;
-                    $scope.loaded = true;
-
-                },
-                function (err) {
-                    console.log("error getting event: " + err);
-                });
+        if (event_gamer.picks) {
+          return true;
+        } else {
+          return false;
+        }
+      }
     }
 
-    $scope.formatDate = function (strDate) {
-        var date = new Date(strDate);
-        return (date.getMonth() + 1) + '-' + date.getDate() + '-' + date.getFullYear()
-    };
+    return false;
+  }
+
+  if ($stateParams.id) {
+    var gameid = $stateParams.id;
+
+    fantasy.getGame(gameid)
+      .then(function(season) {
+          var picks = [];
+          var nopicks = [];
+
+          var gamers = season.gamers;
+          var events = season.events.reverse(); // show most recent first
+
+          if (events.length > 0) {
+            // get most recent event
+            var event = events[0];
+
+            for (var g=0; g<gamers.length; g++) {
+              var gamer = gamers[g];
+
+              if (findGamerPicks(gamer, event.gamers)) {
+                picks.push(gamer);
+              } else {
+                nopicks.push(gamer);
+              }
+            }
+          }
+
+          console.log("picks: " + JSON.stringify(picks));
+          console.log("nopicks: " + JSON.stringify(nopicks));
+
+          $scope.season = season.name;
+          $scope.name = event.name;
+          $scope.picks = picks;
+          $scope.nopicks = nopicks;
+          $scope.loaded = true;
+
+        },
+        function(err) {
+          $scope.statusMessage = "Error loading fantasy information!!";
+          $scope.loaded = true;
+        });
+
+
+  }
 
 };

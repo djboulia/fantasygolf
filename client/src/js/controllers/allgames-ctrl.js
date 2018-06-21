@@ -3,6 +3,7 @@ angular.module('CloudApp')
 
 function AllGamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, fantasy) {
 
+  var picksUrl = "#/gameplayers";
   var draftUrl = "#/draft";
   var rosterUrl = "#/roster";
   var editUrl = '#/game';
@@ -22,6 +23,7 @@ function AllGamesCtrl($scope, $cookieStore, $location, $sanitize, currentUser, f
         console.log("games : " + JSON.stringify(games));
 
         $scope.statusMessage = statusMessage;
+        $scope.picksUrl = picksUrl;
         $scope.draftUrl = draftUrl;
         $scope.rosterUrl = rosterUrl;
         $scope.editUrl = editUrl;

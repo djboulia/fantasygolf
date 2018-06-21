@@ -16,11 +16,15 @@
                                     <th>Game</th>
                                     <th class="text-center"></th>
                                     <th class="text-center"></th>
+                                    <th class="text-center"></th>
+                                    <th class="text-center"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr ng-repeat="game in games">
                                     <td>{{game.name}}</td>
+                                    <td><a ng-href="{{picksUrl}}/id/{{game.id}}">Picks Status</a>
+                                    </td>
                                     <td><a ng-href="{{rosterUrl}}/id/{{game.id}}">View Roster</a>
                                     </td>
                                     <td><a ng-href="{{draftUrl}}/id/{{game.id}}">Draft Room</a>
