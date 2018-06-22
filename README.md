@@ -26,7 +26,6 @@ Each player will draft 12 golfers, 5 of which will start on any given week.
 ## Overall Design
 
 - There is a client side, Angular (https://angularjs.org) based app located under the /client directory.  /client/src/index.html is the main entry point
-- There is also a mobile optimized site under /client/src/mobile which uses the Ionic framework (http://ionicframework.com).
 - The server side is implemented in Node and uses StrongLoop (https://strongloop.com). It is located in the /server directory.  /server/server.js is the main entry point for the backend server.
 - You can browse the server side API at the URL http://localhost:3000/explorer
 - For the most part, the server side API provides access to the game data, which is stored in a Cloudant database.  The one exception is scoring data, which comes from the tourdata.mybluemix.net site.
