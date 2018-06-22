@@ -23,80 +23,8 @@ var paths = {
     images: 'client/src/img/**/*.*',
     templates: 'client/src/templates/**/*.html',
     index: 'client/src/index.html',
-    mobile: 'client/src/mobile/**/*.*',
     bower_fonts: 'client/src/components/**/*.{ttf,woff,woff2,eof,svg}'
 };
-
-var mobile_paths = {
-    scripts: 'client/src/mobile/js/**/*.*',
-    services_scripts: ['client/src/js/cloud-objects/**/*.*','client/src/js/services/**/*.*'],
-    cssstyles: 'client/src/mobile/css/**/*.*',
-    styles: 'client/src/mobile/less/**/*.*',
-    images: 'client/src/mobile/images/**/*.*',
-    templates: 'client/src/mobile/templates/**/*.html',
-    index: 'client/src/mobile/index.html',
-    bower_fonts: 'client/src/components/**/*.{ttf,woff,eof,svg}'
-};
-
-/** BEGIN MOBILE SECTION **/
-
-/**
- * Handle bower components from index
- */
-gulp.task('mobile-usemin', function () {
-    return gulp.src(mobile_paths.index)
-        .pipe(usemin({
-            js: [minifyJs(), 'concat'],
-            css: [minifyCss({
-                keepSpecialComments: 0
-            }), 'concat'],
-        }))
-        .pipe(gulp.dest('client/dist/mobile'));
-});
-
-/**
- * Handle custom files
- */
-gulp.task('mobile-build-custom', ['mobile-custom-images', 'mobile-custom-js', 'mobile-custom-services-js', 'mobile-custom-less', 'mobile-custom-templates']);
-
-gulp.task('mobile-custom-images', function () {
-    return gulp.src(mobile_paths.images)
-        .pipe(gulp.dest('client/dist/mobile/images'));
-});
-
-gulp.task('mobile-custom-js', function () {
-    return gulp.src(mobile_paths.scripts)
-        .pipe(sourcemaps.init())
-        .pipe(debug())
-//        .pipe(minifyJs())
-        .pipe(concat('golfpicks.min.js'))
-        .pipe(sourcemaps.write('../maps'))
-        .pipe(gulp.dest('client/dist/mobile/js'));
-});
-
-gulp.task('mobile-custom-services-js', function () {
-    return gulp.src(mobile_paths.services_scripts)
-        .pipe(sourcemaps.init())
-        .pipe(debug())
-//        .pipe(minifyJs())
-        .pipe(concat('golfpicks-services.min.js'))
-        .pipe(sourcemaps.write('../maps'))
-        .pipe(gulp.dest('client/dist/mobile/js'));
-});
-
-gulp.task('mobile-custom-less', function () {
-    return gulp.src(mobile_paths.styles)
-        .pipe(less())
-        .pipe(gulp.dest('client/dist/mobile/css'));
-});
-
-gulp.task('mobile-custom-templates', function () {
-    return gulp.src(mobile_paths.templates)
-        .pipe(minifyHTML())
-        .pipe(gulp.dest('client/dist/mobile/templates'));
-});
-
-/** END MOBILE SECTION **/
 
 
 /**
@@ -116,7 +44,7 @@ gulp.task('usemin', function () {
 /**
  * Copy assets
  */
-gulp.task('build-assets', ['copy-bower_fonts', 'copy-mobile-bower_fonts']);
+gulp.task('build-assets', ['copy-bower_fonts']);
 
 gulp.task('copy-bower_fonts', function () {
     return gulp.src(paths.bower_fonts)
@@ -124,14 +52,6 @@ gulp.task('copy-bower_fonts', function () {
             dirname: '/fonts'
         }))
         .pipe(gulp.dest('client/dist/lib'));
-});
-
-gulp.task('copy-mobile-bower_fonts', function () {
-    return gulp.src(mobile_paths.bower_fonts)
-        .pipe(rename({
-            dirname: '/fonts'
-        }))
-        .pipe(gulp.dest('client/dist/mobile/lib'));
 });
 
 /**
@@ -173,8 +93,7 @@ gulp.task('build-strongloop-angular', function () {
     return gulp.src('./server/server.js')
         .pipe(loopbackAngular())
         .pipe(rename('lb-services.js'))
-        .pipe(gulp.dest('./client/dist/js'))
-        .pipe(gulp.dest('./client/dist/mobile/js'));
+        .pipe(gulp.dest('./client/dist/js'));
 ;
 });
 
@@ -190,13 +109,6 @@ gulp.task('watch', function () {
     gulp.watch([paths.scripts], ['custom-js']);
     gulp.watch([paths.templates], ['custom-templates']);
     gulp.watch([paths.index], ['usemin']);
-    gulp.watch([mobile_paths.images], ['mobile-custom-images']);
-    gulp.watch([mobile_paths.cssstyles], ['mobile-usemin']);
-    gulp.watch([mobile_paths.styles], ['mobile-custom-less']);
-    gulp.watch([mobile_paths.scripts], ['mobile-custom-js']);
-    gulp.watch([mobile_paths.services_scripts], ['mobile-custom-services-js']);
-    gulp.watch([mobile_paths.templates], ['mobile-custom-templates']);
-    gulp.watch([mobile_paths.index], ['mobile-usemin']);
 });
 
 gulp.task('start', function () {
@@ -215,7 +127,6 @@ gulp.task('start', function () {
 /**
  * Gulp tasks
  */
-gulp.task('mobile-build', ['mobile-usemin', 'mobile-build-custom']);
-gulp.task('build', ['mobile-build', 'usemin', 'build-assets', 'build-custom',
+gulp.task('build', ['usemin', 'build-assets', 'build-custom',
                     'build-strongloop-angular']);
 gulp.task('default', ['build', 'start', 'watch']);
